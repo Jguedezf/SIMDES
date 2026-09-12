@@ -79,7 +79,7 @@ export default async function ReportesPage() {
 
         <ExportarReportes datos={datosReporte} />
 
-        <div className="tarjeta-interactiva rounded-2xl border border-brand-border bg-brand-surface/60 p-5 mb-6">
+        <div className="tarjeta-interactiva tarjeta-vidrio p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-4">Alertas — pendientes vs. resueltas</h2>
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="tarjeta-interactiva rounded-lg p-3 text-center bg-brand-coral/10 border border-transparent">
@@ -111,7 +111,7 @@ export default async function ReportesPage() {
           </Link>
         </div>
 
-        <div className="tarjeta-interactiva rounded-2xl border border-brand-border bg-brand-surface/60 p-5">
+        <div className="tarjeta-interactiva tarjeta-vidrio p-5">
           <h2 className="font-semibold text-foreground mb-4">Consumo de tokens de IA</h2>
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="tarjeta-interactiva rounded-lg p-3 text-center bg-white/5 border border-transparent">

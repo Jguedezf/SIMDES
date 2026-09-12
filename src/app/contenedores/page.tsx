@@ -118,7 +118,7 @@ export default async function ListadoContenedoresPage({
           )}
         </form>
 
-        <div className="rounded-2xl border border-brand-border bg-brand-surface/60 overflow-x-auto">
+        <div className="tarjeta-vidrio overflow-x-auto">
           <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-left text-brand-muted border-b border-brand-border">

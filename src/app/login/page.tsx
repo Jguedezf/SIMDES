@@ -157,7 +157,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={enviando}
-            className="w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-[#0D0D0D] transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.25)] disabled:opacity-50 disabled:hover:shadow-none"
+            className="w-full boton-pill bg-white px-4 py-2.5 text-sm font-semibold text-[#0D0D0D] transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.25)] disabled:opacity-50 disabled:hover:shadow-none"
           >
             {enviando ? 'Entrando...' : 'Iniciar sesión'}
           </button>

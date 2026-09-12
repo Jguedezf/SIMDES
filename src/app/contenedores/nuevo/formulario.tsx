@@ -111,7 +111,7 @@ export default function FormularioNuevoContenedor() {
           Crea una isla ecológica completa: un contenedor segregado por cada tipo de residuo que marques, en el mismo punto físico.
         </p>
 
-        <form onSubmit={guardar} className="rounded-2xl border border-brand-border bg-brand-surface/60 p-5 space-y-6">
+        <form onSubmit={guardar} className="tarjeta-vidrio p-5 space-y-6">
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">Ubicación</label>
             <MapaSelectorPuntoWrapper
@@ -137,7 +137,7 @@ export default function FormularioNuevoContenedor() {
                   key={z}
                   type="button"
                   onClick={() => setZona(z)}
-                  className={`flex-1 text-sm font-semibold px-3 py-2 rounded-lg border transition-colors ${
+                  className={`flex-1 boton-pill text-sm font-semibold px-3 py-2 border ${
                     zona === z
                       ? 'bg-brand-emerald border-brand-emerald text-brand-bg'
                       : 'bg-transparent border-brand-border text-brand-muted hover:border-brand-emerald/50'
@@ -216,7 +216,7 @@ export default function FormularioNuevoContenedor() {
           <button
             type="submit"
             disabled={!puedeGuardar || guardando}
-            className="w-full bg-brand-emerald text-brand-bg text-sm font-semibold px-4 py-2.5 rounded-lg hover:brightness-110 disabled:opacity-50 transition"
+            className="w-full bg-brand-emerald text-brand-bg boton-pill text-sm font-semibold px-5 py-2.5 hover:brightness-110 disabled:opacity-50"
           >
             {guardando ? 'Guardando...' : `Registrar ${tiposSeleccionados.size} contenedor${tiposSeleccionados.size === 1 ? '' : 'es'}`}
           </button>

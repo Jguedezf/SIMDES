@@ -8,7 +8,10 @@ type Props = {
   peligroso?: boolean
   cargando?: boolean
   onConfirmar: () => void
-  onCancelar: () => void
+  // Si se omite, el modal queda en modo informativo: un solo botón, sin
+  // "Cancelar" — para confirmar algo que ya ocurrió (ej. "Punto reubicado"),
+  // no para pedir permiso antes de una acción.
+  onCancelar?: () => void
 }
 
 // Diálogo modal reutilizable para acciones que necesitan confirmación
@@ -21,24 +24,26 @@ export default function ModalConfirmacion({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={cargando ? undefined : onCancelar} />
-      <div className="modal-entrada relative w-full max-w-sm rounded-2xl border border-brand-border bg-brand-surface p-6 shadow-2xl">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={cargando ? undefined : (onCancelar ?? onConfirmar)} />
+      <div className="modal-entrada relative w-full max-w-sm tarjeta-vidrio p-6 shadow-2xl">
         <h2 className="text-lg font-bold text-foreground mb-2">{titulo}</h2>
         <p className="text-sm text-brand-muted mb-6">{descripcion}</p>
         <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancelar}
-            disabled={cargando}
-            className="text-sm font-medium text-brand-muted hover:text-foreground px-4 py-2 rounded-lg transition disabled:opacity-50"
-          >
-            Cancelar
-          </button>
+          {onCancelar && (
+            <button
+              type="button"
+              onClick={onCancelar}
+              disabled={cargando}
+              className="boton-pill text-sm font-medium text-brand-muted hover:text-foreground px-5 py-2 transition disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+          )}
           <button
             type="button"
             onClick={onConfirmar}
             disabled={cargando}
-            className={`text-sm font-semibold px-4 py-2 rounded-lg transition disabled:opacity-50 ${
+            className={`boton-pill text-sm font-semibold px-5 py-2 disabled:opacity-50 ${
               peligroso
                 ? 'bg-brand-coral text-white hover:brightness-110'
                 : 'bg-brand-emerald text-brand-bg hover:brightness-110'

@@ -39,7 +39,7 @@ export default function BotonResolverAlerta({ alertaId }: { alertaId: string }) 
     <div className="mt-2">
       <button
         onClick={() => setConfirmando(true)}
-        className="text-xs font-semibold text-brand-emerald border border-brand-emerald/40 rounded-lg px-2.5 py-1 hover:bg-brand-emerald/10 transition"
+        className="boton-pill text-xs font-semibold text-brand-emerald border border-brand-emerald/40 px-3 py-1 hover:bg-brand-emerald/10"
       >
         Marcar resuelta
       </button>

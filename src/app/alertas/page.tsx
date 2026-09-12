@@ -38,7 +38,7 @@ export default async function AlertasPage() {
 
         <div className="space-y-3">
           {alertas?.map((a) => (
-            <div key={a.id} className="tarjeta-interactiva rounded-2xl border border-brand-border bg-brand-surface/60 p-4">
+            <div key={a.id} className="tarjeta-interactiva tarjeta-vidrio p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold text-foreground font-mono">{a.contenedores?.codigo ?? a.contenedor_id}</span>
                 <span className={`text-xs font-bold px-2 py-1 rounded-full capitalize ${estadoClase[a.estado] ?? 'bg-brand-border text-brand-muted'}`}>
