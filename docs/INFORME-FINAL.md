@@ -398,9 +398,9 @@ El plan de Aseguramiento de la Calidad del Software (SQA) se formalizó bajo el 
 | Umbral crítico sostenido | Nivel ≥85% sostenido durante la ventana de persistencia | n8n dispara la predicción de IA y despacha la orden por Telegram con ubicación GPS | ✅ Verificado — 20 predicciones y 5 alertas reales entregadas por Telegram |
 | Lectura de RLS sin sesión | Cliente anónimo lee `predicciones`/`cuadrillas`/`uso_tokens_ia`/`reportes` | Debe devolver los datos públicos, no un arreglo vacío | ✅ Verificado con la anon key real de la app tras el fix de la sección 4.6 |
 
-## 4.6 Hallazgos de Calidad Reales: Evidencia de FTR en Dos Frentes
+## 4.6 Hallazgos de Calidad Reales: Evidencia de FTR en Tres Frentes
 
-Esta sección reúne, con el mismo nivel de detalle técnico, **dos hallazgos de calidad independientes** producidos el 11/09 — no uno solo. Ambos son la evidencia más concreta de gestión de calidad real que tiene el proyecto: no se trata de un plan de calidad teórico, sino de no conformidades reales encontradas y corregidas mediante revisión activa.
+Esta sección reúne, con el mismo nivel de detalle técnico, **tres hallazgos de calidad independientes** — dos producidos el 11/09 y uno el 12/09. Los tres son la evidencia más concreta de gestión de calidad real que tiene el proyecto: no se trata de un plan de calidad teórico, sino de no conformidades reales encontradas y corregidas mediante revisión activa.
 
 ### Hallazgo 1 — Tres bugs en el flujo de n8n
 
@@ -418,9 +418,17 @@ Al recibir el archivo `docs/INFORME-AVANCE-ACTUALIZADO-11-09.md` como contenido 
 
 **Por qué esto importa para el criterio de calidad del proyecto:** el hallazgo (b) demuestra que una revisión de calidad no puede limitarse a confirmar que "los datos existen" — debe confirmar que **la aplicación real, con los permisos reales de un usuario real, puede acceder a ellos**. Verificar con herramientas de acceso elevado (administración de base de datos) sin replicar el acceso real del cliente es, en sí mismo, un patrón de prueba insuficiente que este proyecto identificó y corrigió en su propio proceso.
 
+### Hallazgo 3 — Lectura pública de `uso_tokens_ia` y `reportes`, heredada del propio parche del Hallazgo 2(b) (12/09)
+
+La auditoría de base de datos pedida explícitamente por Johanna para el 12/09 ("confirmar que todo lo visible en la interfaz está realmente bien persistido, no dar por sentado") encontró que el parche del Hallazgo 2(b) —agregar `SELECT` público a 4 tablas de una sola vez— fue demasiado amplio: `uso_tokens_ia` y `reportes` quedaron con lectura pública total, pese a estar documentadas en el modelo de roles (sección 3.8) como exclusivas de Administrador/Directiva. Se verificó con la misma anon key pública real: cualquier visitante sin sesión podía leer las 50 filas de `uso_tokens_ia` (`GET /rest/v1/uso_tokens_ia`, `Content-Range: 0-.../50`) — el consumo/costo real de IA, expuesto sin autenticación a cualquiera que abriera las herramientas de desarrollador del sitio en producción.
+
+Corrección con dos partes coordinadas, porque una sola no bastaba: (1) la política de `SELECT` se reescribió para exigir `rol_actual() = ANY (ARRAY['administrador','directiva'])`; (2) `src/app/reportes/page.tsx` se cambió del cliente anónimo de Supabase al cliente con sesión (`crearClienteServidor`, ya usado en `obtenerPerfil`/`exigirRol`) — sin este segundo cambio, ni siquiera un Administrador real habría podido ver su propio reporte, porque la consulta de datos no llevaba su identidad y `auth.uid()` habría resuelto `NULL` dentro de la política. Reverificado con la anon key (ahora `Content-Range: */0`, bloqueado) y con una sesión real de Directiva vía Playwright (el reporte sigue mostrando los datos reales — 50 llamadas, 11.771 tokens — sin regresión).
+
+**Por qué esto importa:** confirma el patrón de fondo ya señalado en el Hallazgo 2(b) — un parche de seguridad aplicado de forma generalizada a varias tablas a la vez, sin distinguir cuáles deben ser públicas por diseño (`contenedores`, `alertas`, `lecturas_sensor`, para el dashboard sin login) y cuáles no, puede introducir exactamente el tipo de brecha que pretendía cerrar. Fue la auditoría explícita —no asumir que "esto ya se corrigió antes"— la que lo encontró.
+
 ## 4.7 Riesgos de Calidad y Mitigación
 
-1. **Al ser un proyecto individual, no existe revisión de código por un tercero.** Mitigación: autorevisión estructurada (FTR) como paso separado de la construcción, nunca en el mismo momento en que se escribe el código. **Este riesgo se materializó y se mitigó con éxito dos veces el 11/09** (secciones 4.6-1 y 4.6-2): sin esa revisión activa, tanto el pipeline de n8n muerto desde su creación como el bug de RLS habrían llegado sin detectar hasta la entrega.
+1. **Al ser un proyecto individual, no existe revisión de código por un tercero.** Mitigación: autorevisión estructurada (FTR) como paso separado de la construcción, nunca en el mismo momento en que se escribe el código. **Este riesgo se materializó y se mitigó con éxito tres veces** (dos el 11/09, sección 4.6-1 y 4.6-2, y una el 12/09, sección 4.6-3): sin esa revisión activa, el pipeline de n8n muerto desde su creación, el bug de RLS de predicciones/cuadrillas/uso_tokens_ia/reportes, y la exposición pública heredada de ese mismo parche, habrían llegado sin detectar hasta la entrega.
 2. **El hardware antivandálico no puede validarse físicamente en el plazo del proyecto.** Mitigación: el piloto se valida por software con datos simulados que reproducen los escenarios de sensor descritos, dejando la validación física como trabajo futuro documentado.
 3. **La API de IA podría responder en un formato inesperado y romper el flujo n8n.** Mitigación: el nodo de decisión valida el esquema JSON de la respuesta antes de usarla; si falla, se registra como error controlado sin detener el flujo.
 4. **El plan gratuito de n8n Cloud es un trial de 14 días, y una entrega retrasada podría dejarlo vencido.** Mitigación: el flujo de automatización se exporta periódicamente como archivo `.json` (control de configuración); alternativamente, n8n puede autoalojarse de forma gratuita y sin límite de tiempo.
@@ -832,27 +840,29 @@ Actor operativo. Columnas clave: `nombre`, `chat_id_telegram` (canal real de Tel
 Nueva (11/09). Enlaza `auth.users` con un rol de negocio. Columnas: `id` (PK/FK a `auth.users`), `rol` (CHECK: administrador/directiva/cuadrilla), `cuadrilla_id` (FK opcional), `nombre`. RLS: cada usuario lee solo su propia fila.
 
 ### 9.3.7 `reportes`
-Resúmenes exportados (HU-06). Columnas: `periodo`, `generado_en`, `url_pdf`. **Vacía** a la fecha — sin pantalla que escriba en ella todavía. **RLS corregido el 11/09.**
+Resúmenes exportados (HU-06). Columnas: `periodo`, `generado_en`, `url_pdf`. **Vacía** a la fecha — sin pantalla que escriba en ella todavía. RLS: `SELECT` restringido a administrador/directiva (corregido el 12/09, sección 4.6-3 — el `SELECT` público agregado el 11/09 fue demasiado amplio para esta tabla).
 
 ### 9.3.8 `log_automatizacion`
 Evidencia de manejo de errores (criterio 7 del baremo). Columnas: `workflow`, `contenedor_id` (FK, nullable), `resultado`, `detalle`, `timestamp`.
 
 ### 9.3.9 `uso_tokens_ia`
-Gobierno de tokens (HU-07, criterio 10 del baremo). Columnas: `workflow`, `modelo`, `prompt_tokens`, `completion_tokens`, `total_tokens`, `timestamp`. **28 filas reales** — ver análisis completo en la sección 12. **RLS corregido el 11/09.**
+Gobierno de tokens (HU-07, criterio 10 del baremo). Columnas: `workflow`, `modelo`, `prompt_tokens`, `completion_tokens`, `total_tokens`, `timestamp`. **50 filas reales** a la fecha de esta revisión — ver análisis completo en la sección 12. RLS: `SELECT` restringido a administrador/directiva (corregido el 12/09, sección 4.6-3 — el `SELECT` público agregado el 11/09 fue demasiado amplio para esta tabla).
 
 ## 9.4 Políticas RLS (Row Level Security)
 
-**Estado real, verificado dos veces el 11/09** (sección 4.6): RLS estaba habilitado en las 9 tablas desde antes de esta sesión, pero **sin ninguna política en 5 de ellas** (`predicciones`, `cuadrillas`, `uso_tokens_ia`, `reportes`, `log_automatizacion`), lo que bloqueaba toda lectura para cualquier cliente sin acceso elevado. Se corrigió agregando `SELECT` público a las 4 tablas que la app efectivamente necesita leer (`log_automatizacion` es de uso interno/auditoría, no leída por ninguna pantalla todavía, y se dejó sin política pública deliberadamente).
+**Estado real, verificado el 11/09 y revisado de nuevo el 12/09** (sección 4.6): RLS estaba habilitado en las 9 tablas desde antes de esta sesión, pero **sin ninguna política en 5 de ellas** (`predicciones`, `cuadrillas`, `uso_tokens_ia`, `reportes`, `log_automatizacion`), lo que bloqueaba toda lectura para cualquier cliente sin acceso elevado. Se corrigió el 11/09 agregando `SELECT` público, pero de forma demasiado amplia: incluyó dos tablas (`uso_tokens_ia`, `reportes`) que el modelo de roles (sección 3.8) documenta como exclusivas de Administrador/Directiva. La auditoría del 12/09 (Hallazgo 3, sección 4.6-3) lo encontró y corrigió. `log_automatizacion` es de uso interno/auditoría, no leída por ninguna pantalla todavía, y se dejó sin política pública deliberadamente (RLS habilitado, cero políticas = bloqueo total).
 
-Control de escritura implementado con **Supabase Auth + RLS por rol** (no `service_role key`, decisión consciente de mantener el control de acceso a nivel de base de datos, no solo de aplicación):
+Control de escritura implementado con **Supabase Auth + RLS por rol** (no `service_role key`, decisión consciente de mantener el control de acceso a nivel de base de datos, no solo de aplicación). Tabla vigente al 12/09:
 
 | Tabla | Política | Regla |
 | --- | --- | --- |
-| `contenedores` | `INSERT`, `UPDATE` | `authenticated` + `rol_actual() = 'administrador'` |
-| `contenedores`, `alertas`, `lecturas_sensor`, `predicciones`, `cuadrillas`, `uso_tokens_ia` | `SELECT` | público (`to public using (true)`) |
+| `contenedores` | `INSERT` | `rol_actual() = 'administrador'` |
+| `contenedores` | `UPDATE` (estado, `eliminado_en`, etc.) | `rol_actual() = 'administrador'` — cubre también el borrado lógico (sección 9.3.1.1), sin policy aparte |
+| `contenedores`, `alertas`, `lecturas_sensor`, `predicciones`, `cuadrillas` | `SELECT` | público (`using (true)`) — intencional, sostiene el dashboard/mapa sin login |
+| `uso_tokens_ia`, `reportes` | `SELECT` | `rol_actual() = ANY (ARRAY['administrador','directiva'])` — corregido el 12/09 (antes público por error, Hallazgo 3) |
 | `perfiles` | `SELECT` | `authenticated`, solo la propia fila (`auth.uid() = id`) |
-| `alertas` | `UPDATE` (marcar resuelta) | **Pendiente** — no implementada todavía |
-| `reportes` | `SELECT` | público (tabla vacía, sin datos que proteger todavía) |
+| `perfiles` | `nombre` editable | función `SECURITY DEFINER` `actualizar_mi_nombre`, no una policy de `UPDATE` genérica (evita auto-ascenso de rol, sección "Perfil de usuario" en la bitácora) |
+| `alertas` | `UPDATE` (marcar resuelta) | `rol_actual() = 'administrador'` o (`rol_actual() = 'cuadrilla'` y `cuadrilla_id` propia) — implementada, ya no pendiente |
 
 ## 9.5 Índices y Decisiones de Modelado
 

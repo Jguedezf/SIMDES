@@ -661,3 +661,23 @@ Dashboard (`/`, es también el "landing" público) y mapa rediseñados a la pale
 
 ### Siguiente paso
 Auditoría de base de datos (único punto que falta de la lista de 7) — confirmar que todo lo visible en la interfaz está realmente bien persistido en Supabase. Sigue abierta la pregunta de modelado de `cuadrillas` (zona vs. unidad de aseo urbano) antes de crear `cuadrilla@simdes.com`.
+
+---
+
+## Auditoría de base de datos (2026-09-12, mismo día)
+
+### Integridad de datos: limpia
+Verificado con SQL directo: 0 contenedores sin `zona_tipo`, 0 códigos con formato incorrecto, 0 códigos duplicados, 0 contenedores sin coordenadas, 0 lecturas/alertas huérfanas (sin contenedor válido), 0 alertas con `cuadrilla_id` inválido, 0 perfiles de rol cuadrilla sin `cuadrilla_id` asignado, 0 desalineación entre `auth.users` y `perfiles` (2 usuarios reales, ambos con perfil correcto), 0 errores históricos en `log_automatizacion`.
+
+### Advisories de Supabase — triage
+`get_advisors` (seguridad + performance) devolvió varios hallazgos; se actuó solo sobre los reales y de bajo riesgo:
+- **Corregidos:** `auth_rls_initplan` (2 policies de `perfiles`/`alertas` reevaluaban `auth.uid()`/`rol_actual()` por fila en vez de una vez — reescritas con `(select ...)`, mismo resultado de control de acceso, verificado con anon key antes/después) e índice faltante en `perfiles.cuadrilla_id` (aditivo, sin riesgo).
+- **Revisados y dejados como están, con justificación:** `spatial_ref_sys` sin RLS (tabla de sistema PostGIS, ya evaluado en sesión anterior, bajo riesgo real); extensión `postgis` en schema `public` (mover requeriría tocar todo lo que la referencia sin prefijo, riesgo alto para el tiempo que queda); función `st_estimatedextent` de PostGIS ejecutable por `anon`/`authenticated` (built-in de la extensión, no creada por nosotros); índices "no usados" (esperado con el volumen de datos de un piloto, no significa mal diseño). Recomendación pendiente de que Johanna la active ella misma: "Leaked Password Protection" en Supabase Auth (Dashboard → Authentication → Policies), 2 minutos, cero riesgo.
+
+### Hallazgo real: `uso_tokens_ia` y `reportes` con lectura pública total (no solo en advisories — verificado con la anon key real)
+El parche del 11/09 (Bloque previo, sección 4.6 del informe) agregó `SELECT` público a 4 tablas de una sola vez, incluyendo por error `uso_tokens_ia` y `reportes` — que el modelo de roles (sección 3.8) documenta como exclusivas de Administrador/Directiva. Confirmado en vivo: `curl` con la anon key pública, sin ninguna sesión, devolvía las 50 filas reales de `uso_tokens_ia` — el consumo/costo de IA quedaba visible para cualquiera que abriera las herramientas de desarrollador del sitio en producción.
+
+Se presentó el hallazgo a Johanna antes de tocar nada (cambio de RLS con impacto real); ella confirmó proceder. Corrección de dos partes coordinadas: (1) policy de `SELECT` reescrita a `rol_actual() = ANY (ARRAY['administrador','directiva'])`; (2) `src/app/reportes/page.tsx` cambiado del cliente anónimo de Supabase al cliente con sesión (`crearClienteServidor`) — sin esto, ni un Administrador real habría visto su propio reporte, porque la consulta no llevaba su identidad (`auth.uid()` habría resuelto `NULL`). Reverificado: anon key ahora bloqueada (`Content-Range: */0`, antes `0-49/50`); sesión real de Directiva probada con Playwright, el reporte sigue mostrando los datos reales (50 llamadas, 11.771 tokens) sin regresión. Documentado en el informe como Hallazgo 3 de la sección 4.6 (mismo patrón que el Hallazgo 2(b) del 11/09 — un parche de RLS generalizado sin distinguir qué debía quedar público).
+
+### Siguiente paso
+Con esto se cierran los 7 puntos de la lista del 12/09. Queda pendiente: la pregunta de modelado de `cuadrillas` (zona vs. unidad de aseo urbano) antes de crear `cuadrilla@simdes.com`, y confirmar/rotar el token de Vercel y la `SUPABASE_SERVICE_ROLE_KEY` si ya no hacen falta.
