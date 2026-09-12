@@ -199,18 +199,18 @@ export default async function ReportesPage({
           </p>
         </div>
 
-        <div className="tarjeta-interactiva tarjeta-vidrio p-5 mb-6">
+        <div className="tarjeta-vidrio p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-4">Alertas — {rango.etiqueta}</h2>
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="tarjeta-interactiva rounded-lg p-3 text-center bg-brand-coral/10 border border-brand-coral/20">
+            <div className="rounded-lg p-3 text-center bg-brand-coral/10 border border-brand-coral/20">
               <p className="text-2xl font-bold text-brand-coral">⚠ {alertasPorEstado.pendiente}</p>
               <p className="text-xs text-brand-coral/80">Pendientes</p>
             </div>
-            <div className="tarjeta-interactiva rounded-lg p-3 text-center bg-brand-amber/10 border border-brand-amber/20">
+            <div className="rounded-lg p-3 text-center bg-brand-amber/10 border border-brand-amber/20">
               <p className="text-2xl font-bold text-brand-amber">→ {alertasPorEstado.enviada}</p>
               <p className="text-xs text-brand-amber/80">Enviadas</p>
             </div>
-            <div className="tarjeta-interactiva rounded-lg p-3 text-center bg-brand-emerald/10 border border-brand-emerald/20">
+            <div className="rounded-lg p-3 text-center bg-brand-emerald/10 border border-brand-emerald/20">
               <p className="text-2xl font-bold text-brand-emerald">✓ {alertasPorEstado.resuelta}</p>
               <p className="text-xs text-brand-emerald/80">Resueltas</p>
             </div>
@@ -236,17 +236,17 @@ export default async function ReportesPage({
           </div>
         </div>
 
-        <div className="tarjeta-interactiva tarjeta-vidrio p-5 mb-6">
+        <div className="tarjeta-vidrio p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-1">Estado de sensores</h2>
           <p className="text-xs text-brand-muted mb-4">
             Un contenedor queda &quot;sin señal&quot; si su sensor no reportó ninguna lectura en las últimas {UMBRAL_SIN_SENAL_HORAS} horas, o nunca reportó — no se asume que todos los sensores siempre responden.
           </p>
           <div className="grid grid-cols-2 gap-3 mb-3">
-            <div className="tarjeta-interactiva rounded-lg p-3 text-center bg-brand-emerald/10 border border-brand-emerald/20">
+            <div className="rounded-lg p-3 text-center bg-brand-emerald/10 border border-brand-emerald/20">
               <p className="text-2xl font-bold text-brand-emerald">✓ {sensoresActivos}</p>
               <p className="text-xs text-brand-emerald/80">Con señal reciente</p>
             </div>
-            <div className={`tarjeta-interactiva rounded-lg p-3 text-center border ${sensoresSinSenal.length ? 'bg-brand-coral/10 border-brand-coral/20' : 'bg-white/5 border-transparent'}`}>
+            <div className={`rounded-lg p-3 text-center border ${sensoresSinSenal.length ? 'bg-brand-coral/10 border-brand-coral/20' : 'bg-white/5 border-transparent'}`}>
               <p className={`text-2xl font-bold ${sensoresSinSenal.length ? 'text-brand-coral' : 'text-foreground'}`}>
                 {sensoresSinSenal.length ? '⚠' : ''} {sensoresSinSenal.length}
               </p>
@@ -268,18 +268,18 @@ export default async function ReportesPage({
           )}
         </div>
 
-        <div className="tarjeta-interactiva tarjeta-vidrio p-5">
+        <div className="tarjeta-vidrio p-5">
           <h2 className="font-semibold text-foreground mb-4">Consumo de tokens de IA — {rango.etiqueta}</h2>
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="tarjeta-interactiva rounded-lg p-3 text-center bg-white/5 border border-transparent">
+            <div className="rounded-lg p-3 text-center bg-white/5 border border-transparent">
               <p className="text-2xl font-bold text-foreground">{totalLlamadas}</p>
               <p className="text-xs text-brand-muted">Llamadas</p>
             </div>
-            <div className="tarjeta-interactiva rounded-lg p-3 text-center bg-white/5 border border-transparent">
+            <div className="rounded-lg p-3 text-center bg-white/5 border border-transparent">
               <p className="text-2xl font-bold text-foreground">{totalTokens.toLocaleString('es-VE')}</p>
               <p className="text-xs text-brand-muted">Tokens totales</p>
             </div>
-            <div className="tarjeta-interactiva rounded-lg p-3 text-center bg-white/5 border border-transparent">
+            <div className="rounded-lg p-3 text-center bg-white/5 border border-transparent">
               <p className="text-2xl font-bold text-foreground">{promedioPorLlamada}</p>
               <p className="text-xs text-brand-muted">Promedio/llamada</p>
             </div>

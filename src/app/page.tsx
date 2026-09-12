@@ -113,17 +113,17 @@ export default async function DashboardPage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="tarjeta-vidrio tarjeta-interactiva p-5">
-            <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">Puntos monitoreados</p>
+        <div className="tarjeta-vidrio p-5 mb-6 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
+          <div className="pb-4 sm:pb-0 sm:pr-5">
+            <p className="text-sm text-brand-muted mb-1">Puntos monitoreados</p>
             <p className="text-3xl font-bold text-foreground">{puntosUnicos}</p>
           </div>
-          <div className="tarjeta-vidrio tarjeta-interactiva p-5">
-            <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">En nivel crítico (&ge;85%)</p>
+          <div className="py-4 sm:py-0 sm:px-5">
+            <p className="text-sm text-brand-muted mb-1">En nivel crítico (≥85%)</p>
             <p className={`text-3xl font-bold ${criticos > 0 ? 'text-brand-coral' : 'text-foreground'}`}>{criticos}</p>
           </div>
-          <div className="tarjeta-vidrio tarjeta-interactiva p-5">
-            <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">Nivel promedio</p>
+          <div className="pt-4 sm:pt-0 sm:pl-5">
+            <p className="text-sm text-brand-muted mb-1">Nivel promedio de llenado</p>
             <p className="text-3xl font-bold text-foreground">{promedio !== null ? `${promedio}%` : '—'}</p>
           </div>
         </div>
