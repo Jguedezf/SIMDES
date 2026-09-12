@@ -220,14 +220,14 @@ export default function ExportarReportes({ datos }: { datos: DatosReporte }) {
         <button
           onClick={manejarPDF}
           disabled={exportandoPDF}
-          className="text-sm font-semibold text-brand-bg bg-brand-emerald hover:brightness-110 transition px-4 py-2 rounded-lg disabled:opacity-50"
+          className="boton-pill text-sm font-semibold text-brand-bg bg-brand-emerald hover:brightness-110 px-5 py-2 disabled:opacity-50"
         >
           {exportandoPDF ? 'Generando...' : 'Exportar PDF'}
         </button>
         <button
           onClick={manejarExcel}
           disabled={exportandoExcel}
-          className="text-sm font-semibold text-foreground border border-brand-border hover:border-brand-emerald/50 transition px-4 py-2 rounded-lg disabled:opacity-50"
+          className="boton-pill text-sm font-semibold text-foreground border border-brand-border hover:border-brand-emerald/50 px-5 py-2 disabled:opacity-50"
         >
           {exportandoExcel ? 'Generando...' : 'Exportar Excel'}
         </button>

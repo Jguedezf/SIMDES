@@ -99,7 +99,11 @@ function construirPopup(punto: PuntoMapa) {
 type Props = {
   contenedores: ContenedorMapa[]
   editable?: boolean
-  onReubicar?: (idsContenedores: string[], lat: number, lng: number) => void
+  // Devuelve `true` si se guardó bien (el marcador se queda donde se soltó) o
+  // `false` si falló (el marcador vuelve a su posición original) — sin esto,
+  // un error de guardado dejaría el pin en un sitio que la base de datos
+  // nunca confirmó.
+  onReubicar?: (idsContenedores: string[], lat: number, lng: number) => Promise<boolean>
 }
 
 export default function MapaContenedores({ contenedores, editable, onReubicar }: Props) {
@@ -145,20 +149,35 @@ export default function MapaContenedores({ contenedores, editable, onReubicar }:
           .bindPopup(construirPopup(punto), { className: 'popup-simdes' })
 
         if (editable) {
+          let posicionAntesDeArrastrar = marcador.getLatLng()
+
           // Efecto visual mientras se arrastra: se levanta y brilla más.
           marcador.on('dragstart', () => {
+            posicionAntesDeArrastrar = marcador.getLatLng()
             marcador.closePopup()
             marcador.getElement()?.classList.add('marcador-arrastrando')
           })
 
-          marcador.on('dragend', () => {
+          marcador.on('dragend', async () => {
             marcador.getElement()?.classList.remove('marcador-arrastrando')
             const { lat, lng } = marcador.getLatLng()
-            onReubicarRef.current?.(
+            const latRedondeada = Number(lat.toFixed(6))
+            const lngRedondeada = Number(lng.toFixed(6))
+
+            // El marcador ya se queda visualmente donde se soltó (Leaflet lo
+            // posiciona solo) — no se toca el mapa de nuevo aquí. Si el
+            // guardado falla, se revierte a la posición original; si tiene
+            // éxito, tampoco se reconstruye nada — evita el salto/parpadeo
+            // que causaba un router.refresh() completo en cada reubicación.
+            const guardadoOk = await onReubicarRef.current?.(
               punto.contenedores.map((c) => c.id),
-              Number(lat.toFixed(6)),
-              Number(lng.toFixed(6))
+              latRedondeada,
+              lngRedondeada
             )
+
+            if (guardadoOk === false) {
+              marcador.setLatLng(posicionAntesDeArrastrar)
+            }
           })
         }
       })

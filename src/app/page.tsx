@@ -114,21 +114,21 @@ export default async function DashboardPage() {
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="rounded-2xl border border-brand-border bg-brand-surface/60 p-5">
+          <div className="tarjeta-vidrio tarjeta-interactiva p-5">
             <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">Puntos monitoreados</p>
             <p className="text-3xl font-bold text-foreground">{puntosUnicos}</p>
           </div>
-          <div className="rounded-2xl border border-brand-border bg-brand-surface/60 p-5">
+          <div className="tarjeta-vidrio tarjeta-interactiva p-5">
             <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">En nivel crítico (&ge;85%)</p>
             <p className={`text-3xl font-bold ${criticos > 0 ? 'text-brand-coral' : 'text-foreground'}`}>{criticos}</p>
           </div>
-          <div className="rounded-2xl border border-brand-border bg-brand-surface/60 p-5">
+          <div className="tarjeta-vidrio tarjeta-interactiva p-5">
             <p className="text-xs uppercase tracking-wide text-brand-muted mb-1">Nivel promedio</p>
             <p className="text-3xl font-bold text-foreground">{promedio !== null ? `${promedio}%` : '—'}</p>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-brand-border bg-brand-surface/60 p-5 mb-6">
+        <div className="tarjeta-vidrio p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-4">Mapa de contenedores</h2>
           {contenedoresMapa.length ? (
             <div className="overflow-hidden rounded-xl border border-brand-border">
@@ -146,7 +146,7 @@ export default async function DashboardPage() {
               <Link
                 key={c.id}
                 href={`/contenedor/${c.id}`}
-                className="group block rounded-2xl border border-brand-border bg-brand-surface/60 p-5 transition hover:border-brand-emerald/50 hover:bg-brand-surface hover:-translate-y-0.5"
+                className="group block tarjeta-vidrio tarjeta-interactiva p-5"
               >
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-semibold text-foreground group-hover:text-brand-emerald transition-colors">{c.codigo}</span>

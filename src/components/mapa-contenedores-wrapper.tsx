@@ -16,7 +16,7 @@ const MapaContenedores = dynamic(() => import('./mapa-contenedores'), {
 type Props = {
   contenedores: ContenedorMapa[]
   editable?: boolean
-  onReubicar?: (idsContenedores: string[], lat: number, lng: number) => void
+  onReubicar?: (idsContenedores: string[], lat: number, lng: number) => Promise<boolean>
 }
 
 export default function MapaContenedoresWrapper({ contenedores, editable, onReubicar }: Props) {

@@ -188,7 +188,7 @@ export default function DetalleContenedorCliente({
           <button
             onClick={simularLectura}
             disabled={simulando}
-            className="bg-brand-emerald text-brand-bg text-sm font-semibold px-4 py-2 rounded-lg hover:brightness-110 disabled:opacity-50 transition"
+            className="boton-pill bg-brand-emerald text-brand-bg text-sm font-semibold px-5 py-2 hover:brightness-110 disabled:opacity-50"
           >
             {simulando ? 'Enviando...' : 'Simular lectura'}
           </button>
@@ -207,7 +207,7 @@ export default function DetalleContenedorCliente({
           </div>
         )}
 
-        <div className="rounded-2xl border border-brand-border bg-brand-surface/60 p-5 mb-6">
+        <div className="tarjeta-vidrio p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-3">Estado del contenedor</h2>
           {esAdministrador ? (
             <>
@@ -217,7 +217,7 @@ export default function DetalleContenedorCliente({
                     key={valor}
                     onClick={() => cambiarEstado(valor)}
                     disabled={guardandoEstado || valor === contenedor.estado}
-                    className={`text-sm font-semibold px-3 py-1.5 rounded-lg border transition-colors disabled:cursor-default ${
+                    className={`text-sm font-semibold px-3 py-1.5 boton-pill border disabled:cursor-default ${
                       valor === contenedor.estado
                         ? 'bg-brand-emerald border-brand-emerald text-brand-bg'
                         : 'bg-transparent border-brand-border text-brand-muted hover:border-brand-emerald/50 disabled:opacity-50'
@@ -230,14 +230,14 @@ export default function DetalleContenedorCliente({
               {mensajeEstado && <p className="text-sm text-brand-muted mt-3">{mensajeEstado}</p>}
             </>
           ) : (
-            <span className="text-sm font-semibold px-3 py-1.5 rounded-lg bg-brand-border text-brand-muted">
+            <span className="text-sm font-semibold px-3 py-1.5 rounded-full bg-brand-border text-brand-muted">
               {estadoEtiqueta[contenedor.estado] ?? contenedor.estado}
             </span>
           )}
         </div>
 
         {esAdministrador && (
-          <div className="rounded-2xl border border-brand-border bg-brand-surface/60 p-5 mb-6">
+          <div className="tarjeta-vidrio p-5 mb-6">
             <h2 className="font-semibold text-foreground mb-1">Administración</h2>
             <p className="text-xs text-brand-muted mb-3">
               Eliminar es una corrección administrativa (ej. contenedor registrado por error) — lo oculta del listado, el mapa y el dashboard, pero conserva su historial. No es lo mismo que &quot;Fuera de servicio&quot;, que es el retiro operativo real de un contenedor que sigue existiendo físicamente.
@@ -245,7 +245,7 @@ export default function DetalleContenedorCliente({
             <button
               onClick={manejarClicEliminar}
               disabled={guardandoEliminado}
-              className={`text-sm font-semibold px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
+              className={`text-sm font-semibold px-3 py-1.5 boton-pill border disabled:opacity-50 ${
                 contenedor.eliminado_en
                   ? 'bg-brand-emerald border-brand-emerald text-brand-bg'
                   : 'bg-transparent border-brand-coral text-brand-coral hover:bg-brand-coral/10'
@@ -257,7 +257,7 @@ export default function DetalleContenedorCliente({
           </div>
         )}
 
-        <div className="tarjeta-interactiva rounded-2xl border border-brand-border bg-brand-surface/60 p-5 mb-6">
+        <div className="tarjeta-interactiva tarjeta-vidrio p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-4">Historial de llenado</h2>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={lecturas.map(l => ({
@@ -274,7 +274,7 @@ export default function DetalleContenedorCliente({
           {!lecturas.length && <p className="text-brand-muted text-sm">Sin lecturas todavía.</p>}
         </div>
 
-        <div className="tarjeta-interactiva rounded-2xl border border-brand-border bg-brand-surface/60 p-5">
+        <div className="tarjeta-interactiva tarjeta-vidrio p-5">
           <h2 className="font-semibold text-foreground mb-3">Predicción (IA)</h2>
           {prediccion ? (
             <div className="flex items-center gap-3 flex-wrap">
