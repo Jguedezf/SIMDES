@@ -575,3 +575,89 @@ Cambio en `src/app/page.tsx`: `<img>` del navbar pasa de `icons/icon-192.png` a 
 
 ### Siguiente paso
 Que Johanna confirme visualmente el tamaño en el navbar. Sigue pendiente su respuesta sobre qué ve realmente en los marcadores del mapa (pregunta del bloque anterior, sobre si el ícono SVG propio se está renderizando o si cae al de Leaflet por defecto).
+
+**Actualización:** Johanna probó todo en vivo (ver Bloque 21) — confirma que el ícono propio del mapa sí se renderiza (no cae a Leaflet), pero pide un estilo visual "cyber/HUD" distinto — no es el bug que se temía, es una mejora estética pendiente.
+
+---
+
+## Bloque 21 — Merge a main + deploy, y cierre del día con lista de pendientes para el 13/09 (2026-09-11)
+
+### Merge y deploy a producción
+Johanna confirmó en vivo (login, CRUD de edición de estado, `/reportes`, `/alertas`, `/contenedores/nuevo`, `/sensor` — todo con datos reales) y detectó que `simdes-coral.vercel.app` seguía en el estado viejo (4 contenedores sin agrupar, sin login) porque **nada del trabajo de hoy estaba commiteado** — `git status`/`git log` confirmaron que `develop` y `main` seguían exactamente en el mismo commit que `origin`, con todo el día de trabajo solo en el working directory.
+
+Antes de commitear: se corrigieron los 3 errores de lint preexistentes (arrastrados desde el Bloque 1, nunca antes tocados) — dos `<a>` reemplazados por `<Link>` (`alertas/page.tsx`, `contenedor/[id]/page.tsx`) y un `eslint-disable` explícito y documentado para `react-hooks/set-state-in-effect` en la carga de datos de `contenedor/[id]` — porque Johanna puso "build/lint pasan" como condición explícita del merge. Se agregó `.claude/settings.local.json` a `.gitignore` (configuración personal, no debía commitearse; `.claude/settings.json` sí, es la config de proyecto del Bloque 4). Verificado: `.env.local` nunca estuvo en riesgo (ya cubierto por `.env*` en `.gitignore` desde antes).
+
+Verificación antes de tocar git: `tsc --noEmit` limpio, `eslint src` limpio (0 errores), `npm run build` exitoso (build de producción real, no solo dev). Commit único en `develop` (39 archivos, todo el trabajo del día), push a `origin/develop`, merge fast-forward (sin conflictos) a `main`, push a `origin/main`.
+
+**No se pudo verificar el estado del deploy de Vercel desde esta sesión** — la herramienta MCP de Vercel se cargó pero `list_teams` devolvió vacío (esta sesión no tiene acceso funcional a la cuenta de Vercel de Johanna); se le pidió a ella confirmar el deploy desde su propio dashboard.
+
+### Cierre del día: lista de pendientes para el 13/09 (NO construidos hoy, solo registrados)
+Johanna probó todo en vivo y dejó esta lista para decidir mañana qué es viable antes de la entrega — **nada de esto se tocó todavía**:
+
+1. **Mapa — estilo visual "cyber/HUD" del contenedor.** Sigue pendiente (el ícono propio SVG sí se renderiza correctamente, confirmado por Johanna — no era el bug de Leaflet que se temía, es una mejora estética). Recordatorio ya acordado: recorte simplificado del render del contenedor + anillo de color por estado, no la foto `device-showcase.png` completa (perdería el código de color).
+2. **CRUD incompleto — falta un listado/consulta real.** Hoy solo hay alta (`/contenedores/nuevo`) y edición de estado (dentro del detalle). Falta una vista de tabla con todos los contenedores (código, tipo, capacidad, última lectura, estado) — no solo verlos como pines en el mapa.
+3. **Perfil de usuario** — no existe pantalla para ver/editar el propio perfil (nombre, correo, cambio de contraseña).
+4. **Historial de reportes exportable** — `/reportes` es en vivo pero no se puede exportar/descargar (PDF o Excel).
+5. **Revisar validaciones de formularios** — registro de contenedor, login, y cualquier otro.
+6. **Auditoría de base de datos** — confirmar que todo lo visible en la interfaz está realmente bien persistido en Supabase (no dar por sentado).
+7. **Usuarios de prueba de Directiva y Cuadrilla** — mismo procedimiento manual que el admin (Bloque 17): Johanna los crea en Supabase Studio, nunca comparte la contraseña, pasa el UUID para vincular en `perfiles`. **Se dio la guía paso a paso, pero no se creó ni vinculó ningún usuario todavía** — Johanna cerró la sesión antes de generar los UUID.
+
+Más lo ya planificado desde antes: modo oscuro/pulido visual completo, gráficos, performance.
+
+### Pregunta abierta de modelado, a discutir el 13/09 antes de crear más cuadrillas de prueba
+Johanna identificó que el modelo actual de `cuadrillas` (una fila = una zona geográfica, hoy solo "Cuadrilla Norte") podría no ser la unidad correcta — en la práctica real, una "cuadrilla" podría corresponder a **una unidad/empresa de aseo urbano**, no solo a una zona. Esto afectaría cómo se modelan las cuadrillas y cómo se asignan las alertas si en algún momento hay que reflejar varias cuadrillas reales (más de una empresa/unidad operando). **No se tomó ninguna decisión ni se creó ninguna cuadrilla nueva** — queda explícitamente para discutir mañana antes de crear el usuario de prueba de Cuadrilla o escalar esa parte del modelo.
+
+### Corrección de fecha límite (importante)
+Johanna avisó que la fecha de entrega cambió: **la entrega del informe es el lunes 14/09**, y el software debe estar terminado **a más tardar el domingo 13/09** — el informe y el video dependen de tener el software ya listo (todo se entrega junto). Quedan dos días de desarrollo: sábado 12/09 y domingo 13/09. Esto reemplaza la lectura anterior de "ventana 14-18/09" como si hubiera margen dentro de esa semana — el 14/09 ahora es la fecha dura de entrega, no el inicio de una ventana con margen.
+
+### Siguiente paso (13/09)
+1. Decidir juntos qué de la lista de 7 puntos es viable para el fin de semana, dado el nuevo límite de tiempo (2 días de desarrollo, no más).
+2. Resolver primero la pregunta de modelado de `cuadrillas` antes de crear el usuario de prueba de esa cuadrilla.
+3. Confirmar que el deploy de Vercel terminó y volver a probar `simdes-coral.vercel.app` en producción.
+
+---
+
+## Bloque 22 — Cierre de los 7 pendientes + cambios de modelo de datos (2026-09-12)
+
+### Cuentas de prueba con dominio de empresa, creadas directamente por esta sesión
+Johanna pidió `@simdes.com` en vez de gmail personal para las cuentas de prueba, y autorizó que esta sesión las cree directamente vía la Auth Admin API de Supabase (con `SUPABASE_SERVICE_ROLE_KEY` puesta temporalmente en `.env.local`, gitignored, y borrada/rotada por ella después de cada uso) — antes era Johanna quien las creaba a mano en Studio. `directiva@simdes.com` creado y vinculado (`rol=directiva`, "Dirección Municipal de Aseo Urbano"). `cuadrilla@simdes.com` sigue **bloqueado** hasta resolver la pregunta de modelado de arriba (sin cambios, sigue abierta).
+
+**Excepción puntual sobre la cuenta admin real:** Johanna pidió explícitamente cambiar el correo/password de SU cuenta (antes `guayanaspaces@gmail.com`) a `admin@simdes.com`, consciente de que implica que la IA conoce la contraseña real — decisión suya, no un cambio de regla general. Esto contradecía una afirmación categórica de la sección 3.8 del informe ("nunca compartir la contraseña con ninguna IA"); se avisó antes de actuar, y a pedido de Johanna se suavizó esa frase a un principio de diseño sin narrar la excepción ni la fecha.
+
+**Modo de trabajo, desde hoy:** Johanna pidió más autonomía — agrupar decisiones, no preguntar por cada micro-paso, reservar interrupciones para lo irreversible, decisiones de alcance/negocio real, o algo que ella necesita probar en vivo.
+
+### Corrección de terminología: "punto limpio" vs. "isla ecológica"
+Johanna releyó el enunciado original de la profesora: usa literalmente "punto limpio". Por trazabilidad con el enunciado/rúbrica, **no se reemplaza** — sigue siendo el término del sitio/ubicación física. "Isla ecológica" se agrega como término técnico aparte, para la agrupación de contenedores segregados **dentro** de un punto limpio. Reflejado en `docs/INFORME-FINAL.md` sección 9.3.1.
+
+### Modelo de zona + código con zona + tamaños por norma EN 840
+Johanna pidió evaluar un campo de zona (vía pública/residencial vs. comercial) para dar lugar a que el contenedor orgánico sea más grande fuera de vía pública — se presentaron opciones (columna denormalizada vs. tabla `puntos_limpios` nueva) y Johanna eligió la columna denormalizada por menor riesgo con el plazo. Migración `agregar_zona_tipo_y_migrar_codigos`: columna `zona_tipo` (CHECK `via_publica`/`comercial`, default `via_publica`) + migración de los 20 códigos reales al nuevo formato `PL-{número}-{R|C}-{tipo}` (ej. `PL-001-R-Y`; todos `-R-` porque el piloto es 100% vía pública). Tamaños válidos por zona/tipo en `src/lib/tamanos-contenedor.ts` (norma EN 840, ya citada en el informe): vía pública 1100/1700L (orgánico 2400/3200L, coincide con los datos reales previos), comercial 2400/3200L (orgánico 3200/5000L). El alta (`src/app/contenedores/nuevo/formulario.tsx`) fue reescrita: crea la isla ecológica completa de una vez (los tipos que el administrador marque), con código y capacidad ofrecidos por dropdown, ya no texto libre.
+
+### CRUD de contenedores completo
+- **Create:** alta rediseñada (arriba).
+- **Read:** listado/tabla nuevo en `/contenedores` (código, tipo, zona, capacidad, última lectura, estado), con filtros GET por tipo/estado/zona sin JS de cliente — más el mapa/tarjetas del dashboard y el detalle, que ya existían.
+- **Update:** estado (ya existía).
+- **Delete:** Johanna pidió que existiera, exclusivo de Administrador, pero como **borrado lógico** — columna `eliminado_en` (timestamp nullable), distinta de `estado=fuera_de_servicio` (retiro operativo real, sigue en reportes). Documentado como decisión de diseño en el informe, sección 9.3.1.1. RBAC cubierto por la policy de `UPDATE` ya existente en `contenedores` (agnóstica a columna) — verificado con la anon key que no puede tocarlo (RLS bloquea, 0 filas afectadas).
+
+### Performance — causa real encontrada, no adivinada
+`/contenedor/[id]` era 100% Client Component con 3 fetches secuenciales en cascada tras bajar el JS (de ahí el "queda renderizando"). Convertido a Server Component (`page.tsx`) + Client Component solo para la parte interactiva (`detalle-cliente.tsx`), con `Promise.all`. Dashboard y reportes tenían el mismo patrón de awaits secuenciales innecesarios, corregido igual. El dashboard traía la tabla `lecturas_sensor` **completa sin límite** en cada carga — se creó la vista `ultima_lectura_por_contenedor` (`DISTINCT ON`, `security_invoker=true`) para traer solo lo necesario.
+
+### Perfil de usuario (`/perfil`)
+Ver/editar nombre propio y cambiar contraseña, cualquier rol autenticado. Correo de solo lectura a propósito: los correos son dominios falsos `@simdes.com` sin bandeja real, y el flujo de confirmación de cambio de correo de Supabase Auth nunca llegaría a destino. `perfiles` nunca tuvo policy de `UPDATE` — en vez de abrir una genérica (que permitiría auto-ascenso de rol), se creó la función `SECURITY DEFINER` `actualizar_mi_nombre` que solo puede tocar `nombre`, acotada a `auth.uid()`. Se encontró que Supabase otorga `EXECUTE` a `anon` por defecto en funciones nuevas — corregido con un `REVOKE` explícito, reverificado (401, permission denied).
+
+### Exportación de reportes (PDF + Excel)
+`/reportes` — botones de exportación 100% client-side (`jspdf`+`jspdf-autotable` para PDF, `exceljs` para Excel). Se descartó `xlsx`/SheetJS por un advisory alto sin parche en npm (prototype pollution/ReDoS); `exceljs` trae uno moderado transitivo (vía `uuid`) que se aceptó conscientemente por bajo riesgo real de explotación en este uso. Verificado con datos reales (no solo que el archivo se genera): descargas interceptadas con Playwright, contenido releído y confirmado.
+
+### Validaciones de formularios — revisión de los 5 `<form>` reales
+Login y perfil ya estaban bien. Se encontraron y corrigieron 2 gaps: el filtro GET de `/contenedores` no validaba el valor de la URL contra la lista real antes de usarlo en la consulta (sin riesgo de inyección, pero silenciosamente no filtraba nada con un valor inventado) — se agregó whitelist. El nombre de perfil no tenía tope de longitud — se agregó (120 caracteres, servidor + cliente).
+
+### Regresión de n8n — verificada después de los cambios de esquema
+Se corrió `scripts/simular-contenedores.js` (20 lecturas reales al webhook) tras la migración de zona/código. Resultado: 20 lecturas persistidas, 14 predicciones de IA, 6 alertas reales por Telegram, 0 errores en `log_automatizacion`. Los mensajes de alerta ya usan el código nuevo con zona correctamente — n8n usa `contenedor_id` (UUID) para sus joins, no `codigo`, así que el cambio de formato no lo afectó.
+
+### Pulido visual (parcial, sigue en curso)
+Dashboard (`/`, es también el "landing" público) y mapa rediseñados a la paleta de marca ya documentada — mapa con estilo "cyber/HUD" (ícono con anillo de pulso animado por estado). **Gotcha real:** los tiles oscuros gratuitos de CartoDB ahora exigen API key (probado, salía marca de agua) — se usa tile estándar de OpenStreetMap + un filtro CSS (invert/hue-rotate) en vez de depender de un proveedor con key. `/reportes` también migrado al tema oscuro. Login ya estaba bien (sesión anterior). Pendiente: pulido de `/contenedor/[id]` más a fondo si alcanza el tiempo (ya tiene el tema oscuro base, pero no un pase de diseño completo).
+
+### Todo verificado antes de cada cambio, no solo al final
+`tsc --noEmit`, `eslint src` y `npm run build` limpios después de cada bloque de trabajo (no solo una vez al final del día). Varias pruebas funcionales reales con Playwright: login real + edición de perfil + cambio de contraseña con verificación de que persistió (y restauración de la cuenta de prueba al estado original), descargas de PDF/Excel interceptadas y su contenido releído, filtro de `/contenedores` probado con valores válidos e inválidos.
+
+### Siguiente paso
+Auditoría de base de datos (único punto que falta de la lista de 7) — confirmar que todo lo visible en la interfaz está realmente bien persistido en Supabase. Sigue abierta la pregunta de modelado de `cuadrillas` (zona vs. unidad de aseo urbano) antes de crear `cuadrilla@simdes.com`.

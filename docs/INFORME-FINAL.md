@@ -350,7 +350,7 @@ El modelo se derivó en dos pasadas, cada una con su propio criterio de validaci
 
 No se creó una distinción entre "Administrador SIMDES" y "Administrador municipal": no existe multi-tenencia en el esquema actual, y la fase de escalamiento municipal es una hoja de ruta sin financiamiento confirmado, no un requisito actual — introducir esa distinción ahora sería diseñar para un futuro hipotético.
 
-**Decisión operativa de seguridad:** el primer usuario administrador se crea manualmente en el panel de Supabase, no mediante un script ni compartiendo la contraseña con ninguna herramienta de IA — práctica básica de higiene de credenciales, coherente con RNF-04. **Estado: pendiente** — el primer usuario todavía no ha sido creado (0 filas en `perfiles` a la fecha de este informe).
+**Decisión operativa de seguridad:** el primer usuario administrador se crea manualmente en el panel de Supabase, siguiendo el principio de minimizar la exposición de credenciales sensibles a herramientas externas durante el desarrollo — práctica básica de higiene de credenciales, coherente con RNF-04. **Estado: pendiente** — el primer usuario todavía no ha sido creado (0 filas en `perfiles` a la fecha de este informe).
 
 ---
 
@@ -806,7 +806,15 @@ erDiagram
 ## 9.3 Descripción de Tablas
 
 ### 9.3.1 `contenedores`
-Catálogo de puntos limpios. Columnas clave: `codigo` (único, ej. `PL-001-Y`), `tipo_residuo` (CHECK: plástico/papel/vidrio/orgánico), `capacidad_litros`, `latitud`/`longitud` + `geog` (columna generada PostGIS), `estado` (CHECK: activo/mantenimiento/fuera_de_servicio). **20 filas reales** a la fecha de este informe.
+Catálogo de contenedores individuales, agrupados en **puntos limpios** — el término del planteamiento original del Problema N.° 9 ("la incapacidad de prever cuándo un punto limpio o papelera pública alcanza su capacidad máxima"), que SIMDES conserva como el nombre del sitio/ubicación física. Cada punto limpio está compuesto por una **isla ecológica**: la agrupación de varios contenedores segregados por tipo de residuo en la misma ubicación (4 en el piloto actual — plástico/papel/vidrio/orgánico, COVENIN 3838), cada uno con sensor y alerta independientes. "Isla ecológica" es el término técnico para esa agrupación interna; "punto limpio" sigue siendo el término del sitio en sí. Columnas clave: `codigo` (único, formato `PL-{número punto}-{zona}-{tipo}`, ej. `PL-001-R-Y` — número de punto de 3 dígitos, zona `R`=residencial/vía pública o `C`=comercial, letra de tipo de residuo según COVENIN 3838), `tipo_residuo` (CHECK: plástico/papel/vidrio/orgánico), `zona_tipo` (CHECK: `via_publica`/`comercial`, agregado 2026-09-12 — determina el rango de capacidades válidas ofrecidas en el alta), `capacidad_litros`, `latitud`/`longitud` + `geog` (columna generada PostGIS), `estado` (CHECK: activo/mantenimiento/fuera_de_servicio), `eliminado_en` (timestamp nullable, ver 9.3.1.1). **20 filas reales** a la fecha de este informe, códigos migrados al nuevo formato con zona (todas `via_publica`, ya que el piloto actual es enteramente residencial/vía pública).
+
+#### 9.3.1.1 Borrado lógico vs. retiro operativo — decisión de diseño (2026-09-12)
+
+El CRUD de `contenedores` incluye "Delete" (facultad exclusiva de Administrador), pero **no** como `DELETE` físico de la fila: los contenedores ya tienen historial real asociado (`lecturas_sensor`, `predicciones`, `alertas`) por llave foránea, y borrar la fila rompería esa integridad referencial o forzaría un `ON DELETE CASCADE` que destruiría evidencia operativa (alertas ya despachadas, predicciones ya generadas). En su lugar, `Delete` se implementa como **borrado lógico**: la columna `eliminado_en` (timestamp, `NULL` = visible). Marcarla oculta el contenedor de listado, mapa y dashboard sin tocar su historial ni las filas relacionadas.
+
+Esto es deliberadamente **distinto** de `estado = 'fuera_de_servicio'`: ese valor sigue significando el retiro operativo real de un contenedor que existe físicamente en el terreno (sigue contando en reportes de gestión). `eliminado_en`, en cambio, es una **corrección administrativa** — por ejemplo, un contenedor registrado por error o duplicado — que no debería figurar como infraestructura operativa en absoluto, pero cuyo historial (si llegó a generar lecturas o alertas) se conserva por trazabilidad. Confundir ambos conceptos en un solo campo (ej. agregar `'eliminado'` como cuarto valor de `estado`) habría mezclado dos preguntas de negocio distintas — "¿el contenedor está operativo?" vs. "¿el registro es válido?" — bajo una sola columna.
+
+**RBAC:** la política RLS de `UPDATE` en `contenedores` ("administrador edita contenedores", `rol_actual() = 'administrador'`) ya cubre esta acción sin necesidad de una policy nueva, porque es agnóstica a qué columna se actualiza — Directiva y Cuadrilla no pueden escribir en `contenedores` bajo ninguna circunstancia, consistente con el modelo de roles de la sección 3.8.
 
 ### 9.3.2 `lecturas_sensor`
 Serie de tiempo de nivel de llenado. Columnas clave: `contenedor_id` (FK), `nivel_pct`, `fuente` (`'simulado'` mientras no hay sensor físico), `timestamp`.
