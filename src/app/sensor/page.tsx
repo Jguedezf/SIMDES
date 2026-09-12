@@ -19,7 +19,7 @@ export default function SensorPage() {
           para vía pública sin supervisión: sin pantalla ni componentes expuestos, discreto y económico.
         </p>
 
-        <div className="tarjeta-interactiva tarjeta-vidrio p-5 mb-6">
+        <div className="tarjeta-vidrio p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-4">Componentes y costo estimado</h2>
           <table className="w-full text-sm">
             <thead>
@@ -50,7 +50,7 @@ export default function SensorPage() {
           </p>
         </div>
 
-        <div className="tarjeta-interactiva tarjeta-vidrio p-5">
+        <div className="tarjeta-vidrio p-5">
           <h2 className="font-semibold text-foreground mb-3">Clasificación por color (COVENIN 3838)</h2>
           <p className="text-sm text-brand-muted mb-3">
             El código de cada contenedor codifica su tipo de residuo por el color oficial de la norma:

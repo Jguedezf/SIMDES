@@ -119,7 +119,7 @@ export default function PerfilCliente({ perfil, cuadrilla }: Props) {
         <Link href="/" className="text-sm text-brand-emerald hover:underline">← Volver al panel</Link>
         <h1 className="text-2xl font-bold text-foreground mt-2 mb-6">Mi perfil</h1>
 
-        <div className="tarjeta-interactiva tarjeta-vidrio p-5 mb-6">
+        <div className="tarjeta-vidrio p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-4">Cuenta</h2>
           <div className="flex items-center gap-4 mb-4">
             <div className={`h-14 w-14 shrink-0 rounded-full flex items-center justify-center text-lg font-bold text-white ${rolColorAvatar[perfil.rol] ?? 'bg-brand-border'}`}>
@@ -139,7 +139,7 @@ export default function PerfilCliente({ perfil, cuadrilla }: Props) {
           </p>
         </div>
 
-        <div className="tarjeta-interactiva tarjeta-vidrio p-5 mb-6">
+        <div className="tarjeta-vidrio p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-1">Capacidades de {rolEtiqueta[perfil.rol] ?? perfil.rol}</h2>
           <p className="text-xs text-brand-muted mb-3">
             Extensión específica del rol sobre el perfil base — cada rol hereda la cuenta de arriba y agrega lo suyo.
@@ -162,7 +162,7 @@ export default function PerfilCliente({ perfil, cuadrilla }: Props) {
           )}
         </div>
 
-        <form onSubmit={guardarNombre} className="tarjeta-interactiva tarjeta-vidrio p-5 mb-6 space-y-3">
+        <form onSubmit={guardarNombre} className="tarjeta-vidrio p-5 mb-6 space-y-3">
           <h2 className="font-semibold text-foreground">Nombre para mostrar</h2>
           <input
             value={nombre}
@@ -181,7 +181,7 @@ export default function PerfilCliente({ perfil, cuadrilla }: Props) {
           </button>
         </form>
 
-        <form onSubmit={pedirConfirmacionPassword} className="tarjeta-interactiva tarjeta-vidrio p-5 space-y-3">
+        <form onSubmit={pedirConfirmacionPassword} className="tarjeta-vidrio p-5 space-y-3">
           <h2 className="font-semibold text-foreground">Cambiar contraseña</h2>
           <div>
             <label className="block text-xs font-semibold text-brand-muted mb-1">Nueva contraseña</label>

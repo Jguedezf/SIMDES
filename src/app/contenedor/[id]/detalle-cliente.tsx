@@ -257,7 +257,7 @@ export default function DetalleContenedorCliente({
           </div>
         )}
 
-        <div className="tarjeta-interactiva tarjeta-vidrio p-5 mb-6">
+        <div className="tarjeta-vidrio p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-4">Historial de llenado</h2>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={lecturas.map(l => ({
@@ -274,7 +274,7 @@ export default function DetalleContenedorCliente({
           {!lecturas.length && <p className="text-brand-muted text-sm">Sin lecturas todavía.</p>}
         </div>
 
-        <div className="tarjeta-interactiva tarjeta-vidrio p-5">
+        <div className="tarjeta-vidrio p-5">
           <h2 className="font-semibold text-foreground mb-3">Predicción (IA)</h2>
           {prediccion ? (
             <div className="flex items-center gap-3 flex-wrap">
