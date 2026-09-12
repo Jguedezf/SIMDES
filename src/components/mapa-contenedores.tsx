@@ -62,10 +62,10 @@ function agruparPorPunto(contenedores: ContenedorMapa[]): PuntoMapa[] {
 
 function construirPopup(punto: PuntoMapa) {
   const contenedorHtml = document.createElement('div')
-  contenedorHtml.style.fontFamily = 'Arial, Helvetica, sans-serif'
   contenedorHtml.style.minWidth = '180px'
 
   const titulo = document.createElement('strong')
+  titulo.style.color = '#F5F5F7'
   titulo.textContent = punto.etiqueta
   contenedorHtml.appendChild(titulo)
   contenedorHtml.appendChild(document.createElement('br'))
@@ -79,13 +79,14 @@ function construirPopup(punto: PuntoMapa) {
 
       const enlace = document.createElement('a')
       enlace.href = `/contenedor/${c.id}`
-      enlace.style.color = '#2563eb'
+      enlace.style.color = nivelColorHex(c.nivel)
       enlace.style.fontWeight = '600'
       enlace.style.textTransform = 'capitalize'
       enlace.textContent = c.tipo_residuo
       fila.appendChild(enlace)
 
       const nivelTexto = document.createElement('span')
+      nivelTexto.style.color = '#9098B5'
       nivelTexto.textContent = c.nivel !== null ? ` — ${c.nivel}%` : ' — sin datos'
       fila.appendChild(nivelTexto)
 
@@ -115,6 +116,9 @@ export default function MapaContenedores({ contenedores }: { contenedores: Conte
       const mapa = L.map(divRef.current).setView(centro, 15)
       mapaRef.current = mapa
 
+      // Tile estándar de OSM + filtro CSS (.mapa-oscuro en globals.css) para el look oscuro.
+      // Los tiles "dark" gratuitos de CartoDB ahora exigen API key (probado 2026-09-12,
+      // salía marca de agua "API KEY REQUIRED") — este enfoque no depende de ningún key.
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
@@ -125,7 +129,7 @@ export default function MapaContenedores({ contenedores }: { contenedores: Conte
 
         L.marker([punto.lat, punto.lng], { icon: icono })
           .addTo(mapa)
-          .bindPopup(construirPopup(punto))
+          .bindPopup(construirPopup(punto), { className: 'popup-simdes' })
       })
     })
 
@@ -136,5 +140,5 @@ export default function MapaContenedores({ contenedores }: { contenedores: Conte
     }
   }, [contenedores])
 
-  return <div ref={divRef} className="w-full h-[420px] rounded-xl" />
+  return <div ref={divRef} className="mapa-oscuro w-full h-[420px] rounded-xl" />
 }
