@@ -1059,7 +1059,7 @@ El consumo medido de IA en producción (Gemini, 28 llamadas, 6.613 tokens) es mo
 | 1 | Objetivo del proyecto | ✅ Cumple | Sección "Objetivos del Proyecto" + aclaración explícita de alcance real (visibilidad/predicción, no ruteo automatizado) agregada el 12/09 |
 | 2 | Herramientas tecnológicas solicitadas/equivalentes | ✅ Cumple | Sección 8.5 (Tecnologías Justificadas) — Next.js/Supabase/n8n/Gemini/Vercel, cada una con su justificación de equivalencia |
 | 3 | Disparador/entrada del flujo | ✅ Cumple | Webhook HTTP de n8n, verificado en vivo el 12/09 (20/20 lecturas procesadas) |
-| 4 | Procesamiento automático de información | ⚠️ Cumple con una advertencia conocida | Persistencia + filtro anti-falsos-positivos funcionan; el filtro de "20 minutos" parece contar lecturas consecutivas, no un lapso real de reloj (sección 10.4) — nunca confirmado ni corregido, declarado explícitamente en vez de asumido |
+| 4 | Procesamiento automático de información | ✅ Cumple | Persistencia + filtro anti-falsos-positivos funcionan; el filtro de 20 minutos mide tiempo real de reloj (`sustained_minutes`), corregido y validado el 11/09 con una racha real de 11.8 min que correctamente no disparó alerta (sección 10.4), y reconfirmado en la regresión completa del 13/09 (20 lecturas, 14 predicciones, 6 alertas, 0 errores) |
 | 5 | Integración correcta de IA | ✅ Cumple | Gemini clasificando riesgo en producción, verificado en vivo el 12/09 (50 llamadas reales, 0 errores) |
 | 6 | Salida clara y útil | ✅ Cumple | Alertas Telegram con ubicación GPS y mensaje generado por IA, verificado en vivo el 12/09 (6 alertas reales con el código de contenedor correcto) |
 | 7 | Manejo de errores/casos vacíos | ✅ Cumple | 3 bugs históricos de n8n documentados y corregidos (10.4); 0 errores en `log_automatizacion` a la fecha; estados vacíos cubiertos en toda la UI ("Sin lecturas todavía", "No hay contenedores registrados", etc.) |
@@ -1067,13 +1067,12 @@ El consumo medido de IA en producción (Gemini, 28 llamadas, 6.613 tokens) es mo
 | 9 | Evidencia funcional (captura/demo/video/repositorio) | ⚠️ Parcial | Repositorio ✅, capturas ✅ (10 reales, sección 11.2), demo en vivo ✅ (`simdes-coral.vercel.app`, deploy `READY`) — **video ❌ pendiente, acción de Johanna** |
 | 10 | Recolección de tokens de IA + sugerencias de consumo | ⚠️ Cumple para Gemini; falta Claude Code | Sección 12 completa con datos reales (50 llamadas, 11.771 tokens) y 3 sugerencias concretas de optimización; el consumo de Claude Code de esta sesión no es medible con las herramientas disponibles aquí — requeriría que Johanna lo consulte en su panel de facturación/uso de Anthropic si quiere incluirlo |
 
-**Resumen:** 7 de 10 criterios cumplen sin reservas. 3 tienen una advertencia explícita y honesta (4, 8, 10), y el criterio 9 depende de una acción que solo Johanna puede completar (grabar el video). Ningún criterio está en blanco ni sin evidencia real.
+**Resumen:** 8 de 10 criterios cumplen sin reservas. 2 tienen una advertencia explícita y honesta (8, 10), y el criterio 9 depende de una acción que solo Johanna puede completar (grabar el video). Ningún criterio está en blanco ni sin evidencia real.
 
 ## 13.3 Trabajo Restante Real (actualizado 2026-09-12)
 
 1. **Grabar el video y subirlo a Drive** (acción de Johanna, no delegable).
 2. Decidir si vale la pena medir/declarar el consumo de tokens de Claude Code (criterios 6 y 10) — requiere que Johanna consulte su panel de uso de Anthropic.
-3. Confirmar el filtro de persistencia de 20 minutos en n8n (criterio 4) — revisar el nodo "Calcular Métricas" directamente en la interfaz de n8n, fuera del alcance de esta sesión (sin herramienta de n8n disponible aquí).
-4. Repaso final de todo el informe antes de exportar a PDF/Word si la entrega lo exige (los diagramas Mermaid deben convertirse a imagen si el formato final no los renderiza, sección 11.2).
+3. Repaso final de todo el informe antes de exportar a PDF/Word si la entrega lo exige (los diagramas Mermaid deben convertirse a imagen si el formato final no los renderiza, sección 11.2).
 
 Todo lo demás —backlog, arquitectura, modelo de roles, matriz de trazabilidad, CRUD completo, seguridad auditada dos veces, pulido visual de las 9 pantallas, y el manual de defensa oral— ya está construido y verificado con datos reales, no solo declarado.
