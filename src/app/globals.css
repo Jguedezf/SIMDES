@@ -144,6 +144,20 @@ body {
     0 32px 64px -28px rgba(0, 212, 170, 0.14);
 }
 
+/* Para chrome flotante que se posa SOBRE contenido denso (popovers, menús) —
+   a diferencia de .tarjeta-vidrio (pensada para reposar sobre el fondo de
+   página), aquí el vidrio translúcido deja ver la información de detrás y
+   choca visualmente (feedback de Johanna, 13/09: el selector de rango de
+   /reportes se veía transparente y encimado con las tarjetas de abajo). */
+.popover-solido {
+  border-radius: 16px;
+  border: 1px solid var(--color-brand-border);
+  background: var(--color-brand-surface);
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.35),
+    0 16px 40px -12px rgba(0, 0, 0, 0.65);
+}
+
 .tarjeta-interactiva {
   transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease;
 }

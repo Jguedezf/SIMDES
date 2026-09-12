@@ -43,7 +43,7 @@ m. Link del video explicando la funcionalidad del proyecto asignado, subirlo a D
 
 **Corrección importante respecto a una versión anterior de este archivo:** la lista tenía 12 puntos (a-l) y le faltaba el punto **d. Gestión del Control de la Calidad del Software** — al insertarlo, todos los puntos siguientes se recorren una letra (la vieja "d. Diagramas de caso de uso" pasa a ser "e", y así sucesivamente hasta la "m" final, que antes no existía como letra propia). La nota anterior de este archivo (que decía que la numeración de la profesora no coincidía con la del informe de Johanna "por el desglose de Estado General") queda **obsoleta** — la lista real de la profesora sí llega hasta la "m", con la gestión de calidad como punto propio "d".
 
-**Pendiente de confirmar con Johanna:** ella indicó revisar también el baremo de evaluación (sección siguiente) por si la profesora lo actualizó junto con esta lista de entregables — el baremo de 10 criterios que sigue abajo es el que estaba registrado hasta ahora y no se ha recibido una versión corregida de esa sección todavía.
+**Confirmado con la profesora (2026-09-13):** el baremo de 10 criterios que sigue abajo sigue vigente sin cambios. Lo único que varió respecto a la planificación inicial es el formato de entrega del informe: se entrega **editable** (no como PDF) — ya aplicado en este proyecto (el informe vive como Markdown en `docs/INFORME-FINAL.md`, editable por diseño).
 
 ### Entregables obligatorios del proyecto (general)
 

@@ -681,3 +681,45 @@ Se presentó el hallazgo a Johanna antes de tocar nada (cambio de RLS con impact
 
 ### Siguiente paso
 Con esto se cierran los 7 puntos de la lista del 12/09. Queda pendiente: la pregunta de modelado de `cuadrillas` (zona vs. unidad de aseo urbano) antes de crear `cuadrilla@simdes.com`, y confirmar/rotar el token de Vercel y la `SUPABASE_SERVICE_ROLE_KEY` si ya no hacen falta.
+
+---
+
+## Bloque 23 — 4 pendientes de reportes cerrados, corrección de un error real en el baremo, y 2 ajustes finos tras revisión visual (2026-09-12/13)
+
+### 1. Calendario del selector de rango — reemplazo completo (2026-09-12 noche)
+El `<input type="date">` nativo de `/reportes` tenía un problema real: su popup de calendario lo dibuja el navegador/SO, no se puede redimensionar ni estilizar por CSS, y "dominaba la pantalla" (feedback de Johanna). Se construyó `src/app/reportes/selector-rango.tsx`: calendario propio, compacto, con selección de rango en 2 clics (primer clic fija "desde", segundo fija "hasta", con auto-swap si el segundo es anterior al primero).
+
+### 2. PDF — período del reporte poco visible (2026-09-12 noche)
+`exportarPDF` en `src/app/reportes/exportar-reportes.tsx` ahora pinta una banda esmeralda prominente justo debajo del encabezado con "PERÍODO DEL REPORTE: ..." en mayúsculas — antes el rango aparecía mezclado en texto pequeño y no resaltaba qué período se estaba reportando. Se agregó también una tabla de historial diario (fecha/pendientes/enviadas/resueltas) entre Alertas y Consumo de tokens, para que el PDF tenga el mismo desglose día-por-día que ya existía en pantalla.
+
+### 3. Excel — de tabla plana a documento de marca, con una vuelta atrás en el logo (2026-09-12 noche → 2026-09-13, corrección)
+Primera versión: se reescribió `exportarExcel` completo — encabezados con fill esmeralda/texto oscuro y bordes reales (antes solo `font.bold` sobre fondo blanco), barras de datos nativas (`addConditionalFormatting` tipo `dataBar`) en las columnas numéricas de Alertas e Historial diario, dos hojas nuevas ("Resumen" con KPIs y "Historial diario"), y el logo de SIMDES embebido en cada hoja vía `worksheet.addImage`.
+
+**Investigado y confirmado antes de prometerlo:** exceljs no tiene API para crear un objeto de gráfico nativo (`<c:chart>`) — solo carga de "chartsheets" legacy, nunca creación. Construir ese XML a mano era un riesgo real de corromper el archivo a esta altura del proyecto. La barra de datos (`dataBar`) es la alternativa más honesta: es 100% nativa de Excel (conditional formatting real, no una imagen pegada), aunque no sea un objeto de gráfico independiente.
+
+**Corrección del 13/09:** Johanna revisó el resultado y el logo quedaba mal encajado en la celda (`addImage` sobre un rango de celdas no tiene el control de posicionamiento en píxeles que sí tiene `jsPDF.addImage`, y el resultado se veía deformado) — "quítale el logo porque no lo colocaste bien, pero está más aceptable" (el resto del formato de marca sí lo aprobó). Se quitó el logo y la columna angosta que tenía reservada; los encabezados ahora arrancan en la columna A en las 5 hojas.
+
+### 4. Consistencia pantalla/PDF/Excel
+Verificada como resultado de los 3 puntos anteriores: los tres formatos comparten ahora el mismo lenguaje visual (fondo oscuro + esmeralda + período destacado + mismo desglose de historial diario).
+
+### Verificación de los 4 puntos
+`tsc --noEmit`, `eslint src` y `npm run build` limpios. Visual/funcional con Playwright: login real, apertura del popover del calendario, selección de rango de 2 clics, descarga real de PDF (renderizado con `pdfjs-dist` a imagen para inspección visual) y de Excel (releído con `exceljs` para confirmar fills/fuentes/bordes/conditional formatting reales en el archivo generado, no solo que existe). Commit `5ef0d8c` → merge a `main` → deploy automático de Vercel.
+
+### 5. Corrección de un error real en el baremo del informe (2026-09-12 noche)
+Al revisar "qué falta del baremo" (pedido explícito de Johanna), se encontró que la tabla resumen de `docs/INFORME-FINAL.md` §13.2 decía que el filtro de persistencia de 20 minutos de n8n "nunca se confirmó ni corrigió" — **eso era falso** y contradecía al resto del propio informe (trazabilidad RF-03, caso de uso CU-03, tabla de casos de prueba), que ya documentaban correctamente el fix del Bloque 7 (11/09): el nodo "Calcular Métricas" contaba lecturas en vez de tiempo real, se corrigió para medir `sustained_minutes` sobre el reloj real, validado con una racha real de 11.8 min que correctamente no disparó alerta.
+
+Se señaló el hallazgo a Johanna antes de corregir (no se asumió que el cambio de práctica ya estaba reflejado en todos lados). Johanna confirmó que no hubo regresión después del Bloque 7, y que además la regresión completa del 13/09 (20 lecturas, 14 predicciones, 6 alertas, 0 errores) lo reconfirma. Corregido: criterio 4 pasa a ✅ Cumple, resumen actualizado a "8 de 10 sin reservas", y se quitó el punto de §13.3 que pedía "confirmar" algo ya confirmado. Commit `e2ced1e` → merge a `main`.
+
+**Lección para no repetir:** al escribir esa tabla resumen no se cruzó contra el resto del propio informe ni contra la bitácora — antes de declarar una advertencia en una tabla de resumen, revisar si el detalle ya documentado en otra sección la contradice.
+
+### 6. Confirmación con la profesora sobre el baremo (2026-09-13)
+Johanna confirmó que el baremo de 10 criterios sigue vigente sin cambios; lo único que varió es que el informe se entrega en formato editable, no PDF (ya aplicado — vive como Markdown). Actualizado `docs/CONTEXTO-ACADEMICO.md` (nota que quedaba abierta desde el 11/09).
+
+### 7. Dos ajustes finos tras revisión visual de Johanna (2026-09-13)
+1. **Popover del calendario transparente:** `.tarjeta-vidrio` (glassmorphism, pensada para tarjetas sobre el fondo de página) se veía mal en un popover flotante sobre contenido denso — dejaba ver las tarjetas de Alertas de atrás y chocaba visualmente. Se creó `.popover-solido` (fondo sólido `--color-brand-surface`, sin blur) en `globals.css`, reservada para chrome flotante sobre contenido (popovers/menús), distinta de `.tarjeta-vidrio`.
+2. **Sin indicador de inicio/fin de rango:** el popover no mostraba explícitamente cuál extremo del rango estaba fijado. Se agregaron dos chips "DESDE" / "HASTA" en la parte superior del popover que reflejan en vivo el estado de la selección.
+
+Ambos verificados visualmente con Playwright (capturas antes/después).
+
+### Siguiente paso
+Johanna pidió una revisión exhaustiva de calidad de software (Pressman) + gestión de la calidad + base de datos, documentar el/los patrón(es) de diseño de la arquitectura y las buenas prácticas aplicadas (para el punto "d. Gestión del Control de la Calidad del Software" de los entregables obligatorios), auditoría de validaciones/CRUDs/animaciones/gráficas en toda la app. En curso.
