@@ -739,11 +739,13 @@ erDiagram
         uuid id PK
         text codigo
         text tipo_residuo
+        text zona_tipo
         int capacidad_litros
         numeric latitud
         numeric longitud
         geography geog
         text estado
+        timestamptz eliminado_en
         timestamptz created_at
     }
     LECTURAS_SENSOR {
@@ -810,6 +812,8 @@ erDiagram
 ```
 
 *Nota: `PERFILES.id` referencia `auth.users(id)` (esquema gestionado por Supabase Auth, no dibujado aquí como entidad propia). `USO_TOKENS_IA` no tiene una FK real hacia `CONTENEDORES` — se identifica por `workflow`, no por contenedor individual.*
+
+*Actualizado 2026-09-12: `CONTENEDORES.zona_tipo` (CHECK `via_publica`/`comercial`, sección 9.3.1) y `CONTENEDORES.eliminado_en` (borrado lógico, sección 9.3.1.1) agregados hoy — no son entidades nuevas, extienden la tabla ya existente. `USO_TOKENS_IA` y `REPORTES` pasaron de `SELECT` público a restringido por rol (Hallazgo 3, sección 4.6-3); el diagrama de entidades no cambia por esto, solo su política de acceso (sección 9.4).*
 
 ## 9.3 Descripción de Tablas
 

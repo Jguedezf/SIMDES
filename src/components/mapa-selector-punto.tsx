@@ -7,7 +7,7 @@ import { crearIconoContenedor } from '@/lib/icono-contenedor'
 
 // Centro aproximado de Parroquia Universidad, Municipio Caroní (piloto SIMDES)
 const CENTRO_DEFECTO: [number, number] = [8.294, -62.714]
-const COLOR_SELECCION = '#2563eb'
+const COLOR_SELECCION = '#00D4AA'
 
 type Props = {
   latitud: number | null
@@ -72,5 +72,5 @@ export default function MapaSelectorPunto({ latitud, longitud, onSeleccionar }: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  return <div ref={divRef} className="w-full h-[280px] rounded-lg" />
+  return <div ref={divRef} className="mapa-oscuro w-full h-[280px] rounded-lg" />
 }

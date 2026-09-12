@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { crearClienteNavegador } from '@/lib/supabase-navegador'
+import ModalConfirmacion from '@/components/modal-confirmacion'
 
 export default function BotonResolverAlerta({ alertaId }: { alertaId: string }) {
   const router = useRouter()
+  const [confirmando, setConfirmando] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
 
@@ -26,6 +28,7 @@ export default function BotonResolverAlerta({ alertaId }: { alertaId: string }) 
           : `No se pudo actualizar: ${error.message}`
       )
       setGuardando(false)
+      setConfirmando(false)
       return
     }
 
@@ -35,13 +38,22 @@ export default function BotonResolverAlerta({ alertaId }: { alertaId: string }) 
   return (
     <div className="mt-2">
       <button
-        onClick={resolver}
-        disabled={guardando}
-        className="text-xs font-semibold text-green-700 border border-green-300 rounded-lg px-2.5 py-1 hover:bg-green-50 disabled:opacity-50"
+        onClick={() => setConfirmando(true)}
+        className="text-xs font-semibold text-brand-emerald border border-brand-emerald/40 rounded-lg px-2.5 py-1 hover:bg-brand-emerald/10 transition"
       >
-        {guardando ? 'Guardando...' : 'Marcar resuelta'}
+        Marcar resuelta
       </button>
-      {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+      {error && <p className="text-xs text-brand-coral mt-1">{error}</p>}
+
+      <ModalConfirmacion
+        abierto={confirmando}
+        titulo="¿Marcar alerta como resuelta?"
+        descripcion="Confirma que el contenedor ya fue atendido en el terreno. Esta acción queda registrada con la hora actual."
+        textoConfirmar="Sí, marcar resuelta"
+        cargando={guardando}
+        onConfirmar={resolver}
+        onCancelar={() => setConfirmando(false)}
+      />
     </div>
   )
 }

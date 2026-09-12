@@ -7,6 +7,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { ZONA_ETIQUETA, type ZonaTipo } from '@/lib/codigo-contenedor'
+import ModalConfirmacion from '@/components/modal-confirmacion'
+import Toast, { type ToastTipo } from '@/components/toast'
 
 export type Contenedor = {
   id: string
@@ -61,6 +63,8 @@ export default function DetalleContenedorCliente({
   const [mensajeEstado, setMensajeEstado] = useState('')
   const [guardandoEliminado, setGuardandoEliminado] = useState(false)
   const [mensajeEliminado, setMensajeEliminado] = useState('')
+  const [confirmandoEliminar, setConfirmandoEliminar] = useState(false)
+  const [toast, setToast] = useState<{ mensaje: string; tipo: ToastTipo } | null>(null)
 
   async function recargarDatos() {
     const [{ data: l }, { data: p }] = await Promise.all([
@@ -137,8 +141,7 @@ export default function DetalleContenedorCliente({
     setGuardandoEstado(false)
   }
 
-  async function alternarEliminado() {
-    const eliminando = contenedor.eliminado_en === null
+  async function ejecutarCambioEliminado(eliminando: boolean) {
     setGuardandoEliminado(true)
     setMensajeEliminado('')
 
@@ -146,6 +149,9 @@ export default function DetalleContenedorCliente({
       .from('contenedores')
       .update({ eliminado_en: eliminando ? new Date().toISOString() : null })
       .eq('id', contenedor.id)
+
+    setConfirmandoEliminar(false)
+    setGuardandoEliminado(false)
 
     if (error) {
       setMensajeEliminado(
@@ -155,8 +161,16 @@ export default function DetalleContenedorCliente({
       )
     } else {
       setContenedor({ ...contenedor, eliminado_en: eliminando ? new Date().toISOString() : null })
+      setToast({ mensaje: eliminando ? 'Contenedor eliminado.' : 'Contenedor restaurado.', tipo: 'exito' })
     }
-    setGuardandoEliminado(false)
+  }
+
+  // Restaurar es reversible y de bajo riesgo — se ejecuta directo. Eliminar
+  // sí pide confirmación (punto 8 del feedback de Johanna: acciones críticas
+  // no deben ejecutarse sin confirmar).
+  function manejarClicEliminar() {
+    if (contenedor.eliminado_en) ejecutarCambioEliminado(false)
+    else setConfirmandoEliminar(true)
   }
 
   return (
@@ -229,7 +243,7 @@ export default function DetalleContenedorCliente({
               Eliminar es una corrección administrativa (ej. contenedor registrado por error) — lo oculta del listado, el mapa y el dashboard, pero conserva su historial. No es lo mismo que &quot;Fuera de servicio&quot;, que es el retiro operativo real de un contenedor que sigue existiendo físicamente.
             </p>
             <button
-              onClick={alternarEliminado}
+              onClick={manejarClicEliminar}
               disabled={guardandoEliminado}
               className={`text-sm font-semibold px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
                 contenedor.eliminado_en
@@ -243,7 +257,7 @@ export default function DetalleContenedorCliente({
           </div>
         )}
 
-        <div className="rounded-2xl border border-brand-border bg-brand-surface/60 p-5 mb-6">
+        <div className="tarjeta-interactiva rounded-2xl border border-brand-border bg-brand-surface/60 p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-4">Historial de llenado</h2>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={lecturas.map(l => ({
@@ -260,7 +274,7 @@ export default function DetalleContenedorCliente({
           {!lecturas.length && <p className="text-brand-muted text-sm">Sin lecturas todavía.</p>}
         </div>
 
-        <div className="rounded-2xl border border-brand-border bg-brand-surface/60 p-5">
+        <div className="tarjeta-interactiva rounded-2xl border border-brand-border bg-brand-surface/60 p-5">
           <h2 className="font-semibold text-foreground mb-3">Predicción (IA)</h2>
           {prediccion ? (
             <div className="flex items-center gap-3 flex-wrap">
@@ -279,6 +293,19 @@ export default function DetalleContenedorCliente({
           )}
         </div>
       </div>
+
+      <ModalConfirmacion
+        abierto={confirmandoEliminar}
+        titulo="¿Eliminar este contenedor?"
+        descripcion="Se ocultará del listado, el mapa y el dashboard. Su historial (lecturas, predicciones, alertas) se conserva y puedes restaurarlo después desde esta misma pantalla."
+        textoConfirmar="Sí, eliminar"
+        peligroso
+        cargando={guardandoEliminado}
+        onConfirmar={() => ejecutarCambioEliminado(true)}
+        onCancelar={() => setConfirmandoEliminar(false)}
+      />
+
+      {toast && <Toast mensaje={toast.mensaje} tipo={toast.tipo} onCerrar={() => setToast(null)} />}
     </main>
   )
 }

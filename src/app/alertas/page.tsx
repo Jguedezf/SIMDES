@@ -15,10 +15,10 @@ type Alerta = {
   cuadrillas: { nombre: string } | null
 }
 
-const estadoColor: Record<string, string> = {
-  pendiente: 'bg-red-100 text-red-800',
-  enviada: 'bg-yellow-100 text-yellow-800',
-  resuelta: 'bg-green-100 text-green-800',
+const estadoClase: Record<string, string> = {
+  pendiente: 'bg-brand-coral/15 text-brand-coral',
+  enviada: 'bg-brand-amber/15 text-brand-amber',
+  resuelta: 'bg-brand-emerald/15 text-brand-emerald',
 }
 
 export default async function AlertasPage() {
@@ -31,22 +31,22 @@ export default async function AlertasPage() {
     .limit(50)) as { data: Alerta[] | null }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
+    <main className="min-h-screen p-6">
       <div className="max-w-3xl mx-auto">
-        <Link href="/" className="text-sm text-blue-600 hover:underline">← Volver al panel</Link>
-        <h1 className="text-2xl font-bold text-gray-900 mt-2 mb-6">Panel de Alertas</h1>
+        <Link href="/" className="text-sm text-brand-emerald hover:underline">← Volver al panel</Link>
+        <h1 className="text-2xl font-bold text-foreground mt-2 mb-6">Panel de Alertas</h1>
 
         <div className="space-y-3">
           {alertas?.map((a) => (
-            <div key={a.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div key={a.id} className="tarjeta-interactiva rounded-2xl border border-brand-border bg-brand-surface/60 p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold text-gray-900">{a.contenedores?.codigo ?? a.contenedor_id}</span>
-                <span className={`text-xs font-bold px-2 py-1 rounded-full capitalize ${estadoColor[a.estado] ?? 'bg-gray-100 text-gray-700'}`}>
+                <span className="font-semibold text-foreground font-mono">{a.contenedores?.codigo ?? a.contenedor_id}</span>
+                <span className={`text-xs font-bold px-2 py-1 rounded-full capitalize ${estadoClase[a.estado] ?? 'bg-brand-border text-brand-muted'}`}>
                   {a.estado}
                 </span>
               </div>
-              <p className="text-sm text-gray-600">{a.mensaje}</p>
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-sm text-brand-muted">{a.mensaje}</p>
+              <p className="text-xs text-brand-muted/70 mt-2">
                 {a.canal} · {a.cuadrillas?.nombre ?? 'Sin cuadrilla'} · {new Date(a.creado_en).toLocaleString('es-VE')}
               </p>
               {a.estado !== 'resuelta' &&
@@ -58,7 +58,7 @@ export default async function AlertasPage() {
           ))}
         </div>
 
-        {!alertas?.length && <p className="text-gray-400 text-center mt-10">No hay alertas registradas todavía.</p>}
+        {!alertas?.length && <p className="text-brand-muted text-center mt-10">No hay alertas registradas todavía.</p>}
       </div>
     </main>
   )
