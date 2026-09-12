@@ -138,6 +138,14 @@ Desarrollar una plataforma web progresiva para el monitoreo en tiempo real y la 
 5. Evaluar la calidad del producto software bajo las características de Inocuidad (Safety), Fiabilidad y Seguridad establecidas en el estándar ISO/IEC 25010:2023.
 6. Implementar control de acceso basado en roles (RBAC), fundamentado tanto en las historias de usuario del backlog como en el modelo de negocio real del proyecto (contratación pública municipal).
 
+### Alcance real (aclaración explícita, 2026-09-12)
+
+El objetivo general menciona "optimización de rutas de recolección municipal" — es el **beneficio** que la visibilidad y la predicción de SIMDES habilitan, no algo que el software calcule o ejecute directamente. Para que no quede ambiguo frente al baremo ni en la defensa oral:
+
+**Lo que SIMDES sí hace:** monitorea el nivel de llenado de cada contenedor en tiempo real, predice con IA cuántas horas faltan para su saturación, y despacha automáticamente una alerta por Telegram a la cuadrilla responsable cuando se cruza el umbral crítico — exactamente el problema del enunciado original (Problema N.° 9: la incapacidad de prever cuándo un punto limpio alcanza su capacidad máxima).
+
+**Lo que SIMDES NO hace:** no calcula ni asigna rutas de camiones, no optimiza el orden en que una cuadrilla visita varios puntos, ni decide automáticamente qué vehículo despachar. Una vez que la alerta llega por Telegram, **la coordinación operativa —qué camión va, en qué orden, por qué calle— es una capa humana posterior**, ejecutada por la cuadrilla que recibe la alerta. Esta es una decisión de alcance consciente, no una limitación oculta descubierta tarde: es exactamente lo que justifica que el modelo de datos de `cuadrillas` se mantenga simple (una fila = un equipo/ruta con su canal de Telegram, sección 9.3.5) en vez de construir un motor de ruteo o una jerarquía completa de despacho — SIMDES no necesita saber *cómo* la cuadrilla llega al contenedor, solo necesita avisarle a tiempo.
+
 ---
 
 # 1. Proceso de Elicitación de Requisitos
@@ -591,44 +599,58 @@ Ya aplicada en el login y en los elementos de semáforo del mapa:
 
 ### 7.1.2 Tipografía y Espaciado
 
-**Pendiente de definir formalmente.** El login usa la fuente del sistema por defecto de Tailwind, sin una escala tipográfica ni un sistema de espaciado documentado todavía — se resolverá en el pase de pulido visual completo, usando el plugin `frontend-design` ya habilitado (sección 6.4). No se inventa una escala aquí para no declarar como "sistema" algo que todavía es una decisión pendiente.
+Fuente del sistema (Geist, vía `next/font`) en toda la aplicación, sin una escala tipográfica formalmente documentada (tamaños/pesos se definieron pantalla por pantalla con criterio de diseño directo, no de un sistema de tokens tipográficos aparte). **Corrección del 12/09:** el plugin `frontend-design` mencionado en la versión anterior de esta sección nunca llegó a instalarse realmente (`.claude/settings.json` lo declaraba `"enabled": true`, pero `installed_plugins.json` estaba vacío — un desajuste de configuración detectado al revisar por qué nunca apareció disponible). El pulido visual del 12/09 se hizo con criterio de diseño directo sobre la paleta ya definida en 7.1.1, no con ese plugin.
 
-### 7.1.3 Concepto de Isotipo (pendiente de generar)
+### 7.1.3 Isotipo
 
-Un contenedor estilizado con una onda de señal IoT sobre él y una hoja que emerge de la boca del contenedor, en verde esmeralda y violeta sobre fondo oscuro. El login actual usa un placeholder geométrico (un cuadrado con glow) en lugar de este isotipo.
+El isotipo real (contenedor estilizado con acentos verde esmeralda/violeta, `public/images/logo.png`) ya está en uso en toda la aplicación desde el 12/09 — no es un placeholder geométrico como describía la versión anterior de esta sección; ese placeholder solo existió temporalmente en el login antes del pulido visual completo.
 
 ## 7.2 Wireframes de Pantallas Principales
 
 *(Wireframes como bocetos de diseño no se incluyen como evidencia — la interfaz real ya construida se documenta con capturas reales una vez tomadas, sección 11.2, para no confundir diseño planificado con producto funcional.)*
 
-**1. Dashboard principal** (HU-02) — mapa interactivo con semáforo de color, tarjetas por contenedor, indicador de sesión (correo/rol o "Iniciar sesión"). ✅ Construido y funcionando.
+**Actualizado 2026-09-12 — todas las pantallas de la aplicación ya comparten la misma paleta oscura de 7.1.1** (antes solo el login la tenía; el resto estaba en un estilo claro genérico). Screenshots reales de cada una en `docs/capturas/` (sección 11.2).
 
-**2. Detalle de contenedor** — historial de lecturas (gráfica), predicción vigente de la IA, control de estado (solo visible para Administrador). ✅ Construido y funcionando.
+**1. Dashboard principal** (HU-02, `01-dashboard.png`) — mapa interactivo agrupado por punto (isla ecológica), con marcadores arrastrables para reubicar (rol Administrador, con efecto visual al levantar y toast de confirmación al soltar), KPIs (puntos monitoreados, en nivel crítico, promedio), tarjetas por contenedor, indicador de sesión. ✅ Construido y funcionando.
 
-**3. Registro de contenedor** (`/contenedores/nuevo`) — formulario con mapa selector de punto, protegido por rol Administrador a nivel de servidor. ✅ Construido y funcionando.
+**2. Detalle de contenedor** (`02-detalle-contenedor.png`) — historial de lecturas (gráfica), predicción vigente de la IA, control de estado y borrado lógico (Administrador, con modal de confirmación al eliminar). ✅ Construido y funcionando.
 
-**4. Login** (`/login`) — estructura tipo "portal de acceso": lockup de marca, título + subtítulo, banner de error, labels en mayúsculas sobre cada input, checkbox + enlace en la misma línea, botón de alto contraste, bloque de contacto separado. ✅ Construido y funcionando, con la paleta oscura de 7.1.1 ya aplicada — es la única pantalla con el "look" premium/futurista definitivo hasta ahora; el resto de la app sigue en un estilo claro genérico, pendiente del pase de pulido.
+**3. Listado de contenedores** (`/contenedores`, `03-listado-contenedores.png`) — tabla con filtros por tipo/estado/zona, toggle de contenedores eliminados (Administrador). ✅ Construido — no existía en la versión anterior de este informe.
 
-**5. Panel de reportes y gobierno de IA** (HU-06, HU-07) — ❌ no construido. Visible para roles Administrador y Directiva.
+**4. Registro de contenedor** (`/contenedores/nuevo`, `04-alta-contenedor.png`) — crea la isla ecológica completa (los contenedores segregados que se marquen) de una vez, con zona, código y capacidad (norma EN 840) generados/ofrecidos, no texto libre; mapa selector ya con el mismo tema oscuro del resto. ✅ Construido y funcionando.
 
-**6. Panel de alertas / marcar resuelta** (rol Cuadrilla) — ❌ no construido.
+**5. Login** (`/login`, `05-login.png`) — sin cambios respecto a la versión anterior de esta sección, ya estaba en el estándar visual definitivo. ✅ Construido y funcionando.
+
+**6. Panel de alertas / marcar resuelta** (`/alertas`, `06-alertas.png`) — rol Cuadrilla (o Administrador) resuelve sus propias alertas, con modal de confirmación antes de ejecutar la acción. ✅ Construido y funcionando — no estaba construido en la versión anterior de esta sección.
+
+**7. Panel de reportes y gobierno de IA** (HU-06, HU-07, `/reportes`, `07-reportes.png`) — alertas por estado, consumo de tokens de IA por modelo, exportación a PDF (con logo y colores de marca) y Excel, con notificación de confirmación al generar cada archivo. ✅ Construido — no estaba construido en la versión anterior de esta sección.
+
+**8. Perfil de usuario** (`/perfil`, `08-perfil.png`) — avatar con iniciales por rol, tarjeta de "capacidades" que hace visible el patrón de herencia del modelo de roles (perfil base + extensión por rol), edición de nombre y cambio de contraseña con confirmación. ✅ Construido — no existía en la versión anterior de este informe.
+
+**9. Especificación del sensor** (`/sensor`, `09-sensor.png`) — ficha técnica del módulo SIMDES-Node. ✅ Construido, migrado al tema oscuro el 12/09.
 
 ## 7.3 Flujo de Navegación
 
 ```mermaid
 flowchart TD
-    Inicio(["Visitante llega a /"]) --> Dashboard["Dashboard público\n(mapa + tarjetas)"]
+    Inicio(["Visitante llega a /"]) --> Dashboard["Dashboard público\n(mapa + tarjetas + KPIs)"]
     Dashboard -->|clic en un contenedor| Detalle["Detalle de contenedor"]
+    Dashboard -->|"Contenedores"| Listado["/contenedores\n(tabla + filtros)"]
     Dashboard -->|"Iniciar sesión"| Login["/login"]
     Login -->|credenciales válidas| DashboardAuth["Dashboard con sesión\n(correo + rol visibles)"]
-    DashboardAuth -->|rol = administrador| Registrar["/contenedores/nuevo"]
-    Registrar -->|guardar| Dashboard
-    Detalle -->|rol = administrador| EditarEstado["Cambiar estado del contenedor"]
+    DashboardAuth -->|rol = administrador| Registrar["/contenedores/nuevo\n(isla ecológica completa)"]
+    DashboardAuth -->|rol = administrador| Arrastrar["Arrastrar un punto\nen el mapa para reubicarlo"]
+    Registrar -->|guardar| Listado
+    Detalle -->|rol = administrador| EditarEstado["Cambiar estado /\nborrado lógico (con modal)"]
+    DashboardAuth -->|"Alertas"| Alertas["/alertas"]
+    Alertas -->|rol = administrador o\ncuadrilla propia| Resolver["Marcar resuelta (con modal)"]
+    DashboardAuth -->|rol = admin/directiva| Reportes["/reportes\n(export PDF/Excel)"]
+    DashboardAuth -->|clic en correo/rol| Perfil["/perfil\n(avatar, capacidades, password)"]
     DashboardAuth -->|"Cerrar sesión"| Dashboard
     Login -.->|no autorizado / sin sesión| Login
 ```
 
-El dashboard es el único punto de entrada real de la aplicación; no hay una pantalla de "inicio" separada. Un visitante sin sesión ve todo en modo lectura; el login no es obligatorio para navegar, solo para escribir.
+El dashboard es el único punto de entrada real de la aplicación; no hay una pantalla de "inicio" separada. Un visitante sin sesión ve todo en modo lectura (dashboard, listado, detalle, alertas); el login solo es obligatorio para escribir (registrar/editar/eliminar contenedores, reubicar puntos, resolver alertas, reportes, perfil).
 
 ---
 
@@ -930,25 +952,32 @@ Cualquier fallo en cualquier paso se registra en `log_automatizacion`, sin deten
 
 **URL:** `https://github.com/Jguedezf/SIMDES`
 
-**Estado del README:** existe (132 líneas, con badges de stack tecnológico y descripción del problema), pero **no refleja todavía** el trabajo del 11/09 (login, modelo de roles, RLS corregido, simulador) — **pendiente de actualizar** antes de la entrega.
+**Estado del README (actualizado 2026-09-12):** reescrito para reflejar el estado real — login, modelo de roles con 4 actores, RLS corregido y auditado dos veces (11/09 y 12/09), CRUD completo de contenedores (incluye borrado lógico), simulador validado end-to-end, y despliegue activo en Vercel.
 
 ## 11.2 Capturas de Pantalla de la Aplicación
 
-**Estado: pendiente en su totalidad.** Ninguna captura se ha tomado todavía — esta sesión no tuvo verificación visual en navegador en ningún momento (sección 6.5). Lista de capturas necesarias, una por pantalla real:
+**Estado: capturas reales tomadas el 12/09**, con sesión autenticada real (no datos de ejemplo), guardadas en `docs/capturas/`:
 
-1. Dashboard principal, con mapa y tarjetas de contenedor.
-2. Detalle de contenedor, con historial de lecturas y predicción de IA.
-3. Formulario de registro de contenedor, con el mapa selector de punto.
-4. Pantalla de login, con el diseño oscuro aplicado.
-5. Estado de sesión en el dashboard (correo + rol + cerrar sesión).
-6. Alerta real recibida en Telegram (captura del chat del bot).
-7. Ejecución del simulador en terminal (evidencia de las corridas reales documentadas en la sección 10.4).
+| # | Captura | Pantalla |
+| --- | --- | --- |
+| 1 | `01-dashboard.png` | Dashboard principal — mapa agrupado por punto, KPIs, tarjetas de contenedor |
+| 2 | `02-detalle-contenedor.png` | Detalle de contenedor — historial de llenado y predicción de IA |
+| 3 | `03-listado-contenedores.png` | Listado/tabla de contenedores con filtros |
+| 4 | `04-alta-contenedor.png` | Formulario de registro — isla ecológica completa con mapa selector |
+| 5 | `05-login.png` | Pantalla de login |
+| 6 | `06-alertas.png` | Panel de alertas, con modal de confirmación al resolver |
+| 7 | `07-reportes.png` | Reportes y gobierno de IA, con exportación PDF/Excel |
+| 8 | `08-perfil.png` | Perfil de usuario — avatar, capacidades por rol |
+| 9 | `09-sensor.png` | Especificación del módulo sensor |
+| 10 | `10-reubicacion-arrastre.png` | Reubicación de un punto por arrastre (rol Administrador) |
 
-**Nota sobre los diagramas de este informe:** los diagramas de las secciones 5.2, 7.3, 8.2 y 9.2 están en formato Mermaid (texto), que GitHub renderiza automáticamente al ver el archivo en el repositorio. **Si la versión final del informe se entrega en un formato que no renderiza Mermaid** (PDF, Word), estos bloques deben exportarse a imagen aparte antes de insertarlos — no se generaron imágenes estáticas en esta sesión.
+**Pendiente, fuera del alcance de esta sesión:** captura de una alerta real recibida en el chat de Telegram del bot (requiere acceso al teléfono/cuenta de Telegram de Johanna) y captura de una corrida del simulador en terminal (cosmética — el resultado real ya está documentado en las secciones 4.6-3 y 10.4).
+
+**Nota sobre los diagramas de este informe:** los diagramas de las secciones 5.2, 7.3, 8.2 y 9.2 están en formato Mermaid (texto), que GitHub renderiza automáticamente al ver el archivo en el repositorio. **Si la versión final del informe se entrega en un formato que no renderiza Mermaid** (PDF, Word), estos bloques deben exportarse a imagen aparte antes de insertarlos.
 
 ## 11.3 Video Explicativo
 
-**Estado: pendiente de grabar.** Guion propuesto: problema → login → mapa con puntos reales → especificaciones del sensor → flujo n8n → alerta real por Telegram → reportes. **Pendiente de subir a Google Drive** una vez grabado.
+**Estado: pendiente de grabar — fuera del alcance de esta sesión de IA, requiere que Johanna lo grabe.** Guion propuesto: problema → login → mapa con puntos reales → arrastrar un punto para reubicarlo → especificaciones del sensor → flujo n8n → alerta real por Telegram → reportes con export PDF/Excel. **Pendiente de subir a Google Drive** una vez grabado.
 
 ---
 
@@ -1006,30 +1035,45 @@ El consumo medido de IA en producción (Gemini, 28 llamadas, 6.613 tokens) es mo
 
 # 13. Conclusiones y Próximos Pasos
 
-| Punto del informe | Estado (11/09) |
-| --- | --- |
-| 1. Elicitación | ✅ Completo |
-| 2. Requerimientos F/NF | ✅ Completo, con matriz de trazabilidad nueva |
-| 3. Historias de usuario | ✅ Completo — 5 de 7 HU con implementación funcional confirmada, reorganizadas por actor |
-| 4. Gestión de calidad | ✅ Completo, con evidencia real de FTR en dos frentes independientes (n8n y documentación) |
-| 5. Diagramas de caso de uso | ✅ Diagrama Mermaid generado con el modelo de 4 roles; desglose por actor incluido |
-| 6. Uso de IA | ⚠️ Completo en estructura; faltan las cifras exactas de tokens de Claude Code y los prompts literales de las fases 1-5 |
-| 7. Prototipo UI/UX | ⚠️ Design System parcial (falta tipografía/espaciado); mapa, CRUD de alta y login funcionando; reportes pendientes |
-| 8. Arquitectura general | ✅ Completo, con diagrama Mermaid nuevo |
-| 9. Arquitectura de BD | ✅ Completo — RLS real corregido (con el bug de producción documentado), diagrama ER nuevo, desglose por tabla |
-| 10. Automatización n8n | ✅ Validado end-to-end, con manejo de errores documentado en detalle |
-| 11. Evidencia del proyecto | ❌ Repositorio activo pero README desactualizado; capturas y video pendientes en su totalidad |
-| 12. Consumo de tokens | ⚠️ Datos reales de Gemini completos; datos de Claude Code pendientes |
+## 13.1 Estado de los 11 Literales del Informe (actualizado 2026-09-12)
 
-**Trabajo restante para la entrega del 14–18/09**, en orden de prioridad sugerido:
-1. Verificación visual de toda la interfaz (nunca hecha en esta sesión) y toma de capturas reales.
-2. Actualizar el README del repositorio con el estado real del 11/09.
-3. Agrupar el mapa por punto (HU-02) — pendiente de trabajo normal, no bloqueante.
-4. Construir la política de `UPDATE` en `alertas` y la pantalla de "marcar resuelta" (rol Cuadrilla).
-5. Construir el panel de reportes (HU-06/HU-07) para los roles Administrador y Directiva.
-6. Crear el primer usuario administrador real y probar el flujo de login de punta a punta.
-7. Recuperar los prompts literales de las fases 1-5 y el consumo de tokens de Claude Code, de sesiones anteriores no accesibles desde aquí.
-8. Grabar el video y subirlo a Drive.
-9. Pase de pulido visual completo (Design System, tipografía, espaciado) con el plugin `frontend-design`, extendiendo el estilo ya aplicado en el login al resto de la aplicación.
+| Literal | Contenido | Estado |
+| --- | --- | --- |
+| a. Elicitación | Sección 1 | ✅ Completo |
+| b. RF/RNF | Sección 2 | ✅ Completo, con matriz de trazabilidad |
+| c. Historias de usuario | Sección 3 | ✅ Completo, 4 actores + Sistema |
+| d. Gestión de calidad | Sección 4 | ✅ Completo — 3 hallazgos reales documentados (4.6-1/2/3), el último del 12/09 |
+| e. Uso de IA | Sección 6 | ⚠️ Completo para Gemini; faltan cifras exactas de tokens de Claude Code (esta sesión) — no medibles con las herramientas disponibles aquí |
+| f. Prototipo UI/UX | Sección 7 | ✅ Completo y actualizado el 12/09 — 9 pantallas reales, toda la app en la misma paleta oscura |
+| g. Arquitectura general | Sección 8 | ✅ Completo |
+| h. Arquitectura de BD | Sección 9 | ✅ Completo, actualizado el 12/09 (zona_tipo, eliminado_en, RLS revisado dos veces) |
+| i. Arquitectura de automatizaciones | Sección 10 | ✅ Completo, validado end-to-end el 12/09 (20 lecturas, 14 predicciones, 6 alertas, 0 errores) |
+| j. Repositorio + README | Sección 11.1 | ✅ README reescrito el 12/09 con el estado real |
+| k. Capturas de pantalla | Sección 11.2 | ✅ 10 capturas reales en `docs/capturas/`, con sesión autenticada |
+| l. Video (Drive) | Sección 11.3 | ❌ **Pendiente — acción de Johanna, fuera del alcance de esta sesión de IA.** Guion ya propuesto. |
 
-Dado que el backlog, la arquitectura, el marco de calidad, el modelo de roles, la matriz de trazabilidad y la bitácora de IA ya están completos —y que el sistema funciona de punta a punta en sus flujos centrales (mapa, ingesta, IA, alerta)—, el trabajo restante es mayormente de construcción de pantallas ya diseñadas y de recolección de evidencia, no de decisiones de diseño pendientes.
+## 13.2 Cumplimiento del Baremo de 10 Criterios (revisión 2026-09-12)
+
+| # | Criterio | Estado | Evidencia |
+| --- | --- | --- | --- |
+| 1 | Objetivo del proyecto | ✅ Cumple | Sección "Objetivos del Proyecto" + aclaración explícita de alcance real (visibilidad/predicción, no ruteo automatizado) agregada el 12/09 |
+| 2 | Herramientas tecnológicas solicitadas/equivalentes | ✅ Cumple | Sección 8.5 (Tecnologías Justificadas) — Next.js/Supabase/n8n/Gemini/Vercel, cada una con su justificación de equivalencia |
+| 3 | Disparador/entrada del flujo | ✅ Cumple | Webhook HTTP de n8n, verificado en vivo el 12/09 (20/20 lecturas procesadas) |
+| 4 | Procesamiento automático de información | ⚠️ Cumple con una advertencia conocida | Persistencia + filtro anti-falsos-positivos funcionan; el filtro de "20 minutos" parece contar lecturas consecutivas, no un lapso real de reloj (sección 10.4) — nunca confirmado ni corregido, declarado explícitamente en vez de asumido |
+| 5 | Integración correcta de IA | ✅ Cumple | Gemini clasificando riesgo en producción, verificado en vivo el 12/09 (50 llamadas reales, 0 errores) |
+| 6 | Salida clara y útil | ✅ Cumple | Alertas Telegram con ubicación GPS y mensaje generado por IA, verificado en vivo el 12/09 (6 alertas reales con el código de contenedor correcto) |
+| 7 | Manejo de errores/casos vacíos | ✅ Cumple | 3 bugs históricos de n8n documentados y corregidos (10.4); 0 errores en `log_automatizacion` a la fecha; estados vacíos cubiertos en toda la UI ("Sin lecturas todavía", "No hay contenedores registrados", etc.) |
+| 8 | Explicación clara de la solución | ⚠️ Cumple en el informe; reforzado con el manual de defensa | Este informe es una referencia técnica exhaustiva, no necesariamente la forma más clara de explicarlo oralmente — ver `docs/MANUAL-DEFENSA-ORAL.md`, escrito específicamente para la sustentación |
+| 9 | Evidencia funcional (captura/demo/video/repositorio) | ⚠️ Parcial | Repositorio ✅, capturas ✅ (10 reales, sección 11.2), demo en vivo ✅ (`simdes-coral.vercel.app`, deploy `READY`) — **video ❌ pendiente, acción de Johanna** |
+| 10 | Recolección de tokens de IA + sugerencias de consumo | ⚠️ Cumple para Gemini; falta Claude Code | Sección 12 completa con datos reales (50 llamadas, 11.771 tokens) y 3 sugerencias concretas de optimización; el consumo de Claude Code de esta sesión no es medible con las herramientas disponibles aquí — requeriría que Johanna lo consulte en su panel de facturación/uso de Anthropic si quiere incluirlo |
+
+**Resumen:** 7 de 10 criterios cumplen sin reservas. 3 tienen una advertencia explícita y honesta (4, 8, 10), y el criterio 9 depende de una acción que solo Johanna puede completar (grabar el video). Ningún criterio está en blanco ni sin evidencia real.
+
+## 13.3 Trabajo Restante Real (actualizado 2026-09-12)
+
+1. **Grabar el video y subirlo a Drive** (acción de Johanna, no delegable).
+2. Decidir si vale la pena medir/declarar el consumo de tokens de Claude Code (criterios 6 y 10) — requiere que Johanna consulte su panel de uso de Anthropic.
+3. Confirmar el filtro de persistencia de 20 minutos en n8n (criterio 4) — revisar el nodo "Calcular Métricas" directamente en la interfaz de n8n, fuera del alcance de esta sesión (sin herramienta de n8n disponible aquí).
+4. Repaso final de todo el informe antes de exportar a PDF/Word si la entrega lo exige (los diagramas Mermaid deben convertirse a imagen si el formato final no los renderiza, sección 11.2).
+
+Todo lo demás —backlog, arquitectura, modelo de roles, matriz de trazabilidad, CRUD completo, seguridad auditada dos veces, pulido visual de las 9 pantallas, y el manual de defensa oral— ya está construido y verificado con datos reales, no solo declarado.
