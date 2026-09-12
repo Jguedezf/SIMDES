@@ -49,7 +49,7 @@ const capacidadesPorRol: Record<string, string[]> = {
 
 type Props = {
   perfil: Perfil
-  cuadrilla: { nombre: string; zona_asignada: string | null } | null
+  cuadrilla: { nombre: string; zona_asignada: string | null; empresa: string | null } | null
 }
 
 export default function PerfilCliente({ perfil, cuadrilla }: Props) {
@@ -156,6 +156,7 @@ export default function PerfilCliente({ perfil, cuadrilla }: Props) {
             <div className="mt-4 pt-4 border-t border-brand-border text-sm">
               <p className="text-xs text-brand-muted">Cuadrilla asignada</p>
               <p className="text-foreground font-semibold">{cuadrilla.nombre}</p>
+              {cuadrilla.empresa && <p className="text-brand-muted text-xs">Ente operador: {cuadrilla.empresa}</p>}
               {cuadrilla.zona_asignada && <p className="text-brand-muted">{cuadrilla.zona_asignada}</p>}
             </div>
           )}
