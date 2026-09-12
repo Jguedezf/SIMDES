@@ -29,13 +29,14 @@ En el sector de gestión de desechos sólidos —recolección municipal, tratami
 
 ## ✨ Funcionalidades
 
-- 📊 **Dashboard en tiempo real** del nivel de llenado de cada contenedor
-- 🧠 **Predicción con IA** de horas estimadas hasta la saturación
-- 🔔 **Alertas automáticas** a cuadrillas vía Telegram, con ubicación GPS
-- 🗺️ **Geolocalización real** (PostGIS) para asignar la cuadrilla más cercana
-- 📈 **Reportes y gráficas** de gestión por período y zona
-- 🔐 **Roles de usuario** (administrador, supervisor, coordinador, cuadrilla)
-- 🔧 **Panel de mantenimiento** de contenedores
+- 📊 **Dashboard en tiempo real** del nivel de llenado, con mapa agrupado por punto limpio
+- 🧠 **Predicción con IA** (Gemini) de horas estimadas hasta la saturación
+- 🔔 **Alertas automáticas** a cuadrillas vía Telegram, con ubicación GPS — con acción de "marcar resuelta" acotada a la cuadrilla asignada
+- 🗺️ **Geolocalización real** (PostGIS) para agrupar contenedores por punto físico
+- 📈 **Panel de reportes** de alertas (pendientes/resueltas) y consumo de tokens de IA, para Administrador y Directiva
+- 🔐 **Autenticación y roles** (Supabase Auth + RLS): Administrador, Directiva/Gerencia, Cuadrilla, y Sistema/Automatización (n8n + IA) como actor no humano
+- 🔧 **CRUD de contenedores** (alta con mapa clicable, edición de estado) protegido por rol
+- 🤖 **Simulador de sensores** (`scripts/simular-contenedores.js`) que dispara el flujo real de n8n para pruebas end-to-end
 
 > Alcance funcional en construcción — ver [Estado del proyecto](#-estado-del-proyecto).
 
@@ -89,9 +90,27 @@ Abre [http://localhost:3000](http://localhost:3000) 🎉
 ---
 
 ## 📁 Estructura del proyecto
+```
 src/
-├── app/ # Rutas y pantallas (App Router de Next.js)
-└── lib/ # Cliente de Supabase y utilidades compartidas
+├── app/       # Rutas y pantallas (App Router de Next.js)
+│   ├── login/           # Autenticación (Supabase Auth)
+│   ├── contenedores/     # Alta de contenedores (rol administrador)
+│   ├── contenedor/[id]/  # Detalle, historial y edición de estado
+│   ├── alertas/          # Panel de alertas + acción de resolver (rol cuadrilla)
+│   ├── reportes/         # Reportes y consumo de IA (administrador/directiva)
+│   └── sensor/           # Especificaciones del módulo sensor
+├── components/ # Mapa (Leaflet), selector de punto, íconos
+├── lib/        # Clientes de Supabase (servidor/navegador), auth, utilidades
+└── proxy.ts    # Refresco de sesión en cada petición (Next.js 16 — antes "middleware.ts")
+
+scripts/
+└── simular-contenedores.js  # Simulador manual de lecturas de sensor
+
+docs/
+├── BITACORA-LOCAL.md            # Bitácora técnica sesión a sesión
+├── CONTEXTO-ACADEMICO.md        # Enunciado, baremo y entregables de la cátedra
+└── INFORME-FINAL.md             # Informe de avance del proyecto
+```
 
 ---
 
@@ -109,13 +128,16 @@ Este repositorio sigue un flujo de dos ramas:
 ## ✅ Estado del proyecto
 
 - [x] Entorno de desarrollo configurado
-- [x] Base de datos (Supabase) modelada y asegurada (RLS + PostGIS)
+- [x] Base de datos (Supabase) modelada y asegurada (RLS por rol + PostGIS)
 - [x] Conexión Next.js ↔ Supabase verificada
-- [ ] Pantallas principales (dashboard, alertas, reportes)
-- [ ] Autenticación y roles
-- [ ] Simulador de sensores
-- [ ] Automatización n8n
+- [x] Pantallas principales (dashboard con mapa agrupado, detalle, alertas, reportes)
+- [x] Autenticación y roles (Supabase Auth + tabla `perfiles`, 4 roles)
+- [x] Simulador de sensores (dispara el flujo real de n8n, no inserta directo en la BD)
+- [x] Automatización n8n (validada end-to-end: persistencia real de 20 min, predicción por IA, alerta real por Telegram)
+- [ ] Primer usuario administrador real vinculado a `perfiles` (pendiente)
+- [ ] Verificación visual completa en navegador
 - [ ] Despliegue en Vercel
+- [ ] Capturas de pantalla y video explicativo
 
 ---
 
@@ -128,6 +150,6 @@ Ingeniería de Software I — UNEG
 
 <div align="center">
 
-📄 El informe de avance completo y los manuales técnicos del proyecto se documentan fuera de este repositorio de código.
+📄 El informe de avance completo está en [`docs/INFORME-FINAL.md`](docs/INFORME-FINAL.md) — incluye diagramas de arquitectura, casos de uso y entidad-relación en Mermaid, renderizados automáticamente por GitHub.
 
 </div>
