@@ -5,6 +5,7 @@ import { calcularRango, diasDelRango } from '@/lib/rango-fechas'
 import ExportarReportes from './exportar-reportes'
 import GraficoAlertas from './grafico-alertas'
 import GraficoHistorial, { type PuntoHistorial } from './grafico-historial'
+import SelectorRango from './selector-rango'
 
 type UsoTokens = {
   workflow: string
@@ -116,6 +117,7 @@ export default async function ReportesPage({
 
   const datosReporte = {
     periodo: rango.etiqueta,
+    historial: datosHistorial,
     alertas: {
       pendiente: alertasPorEstado.pendiente,
       enviada: alertasPorEstado.enviada,
@@ -168,32 +170,10 @@ export default async function ReportesPage({
               </Link>
             ))}
           </div>
-          <form method="get" className="flex flex-wrap items-end gap-2">
-            <input type="hidden" name="rango" value="custom" />
-            <div>
-              <label className="block text-xs font-semibold text-brand-muted mb-1">Desde</label>
-              <input
-                type="date"
-                name="desde"
-                defaultValue={rango.preset === 'custom' ? rango.desde.toISOString().slice(0, 10) : undefined}
-                required
-                className="border border-brand-border bg-brand-bg rounded-lg px-2 py-1.5 text-sm text-foreground"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-brand-muted mb-1">Hasta</label>
-              <input
-                type="date"
-                name="hasta"
-                defaultValue={rango.preset === 'custom' ? rango.hasta.toISOString().slice(0, 10) : undefined}
-                required
-                className="border border-brand-border bg-brand-bg rounded-lg px-2 py-1.5 text-sm text-foreground"
-              />
-            </div>
-            <button type="submit" className="boton-pill text-sm font-semibold text-foreground border border-brand-border hover:border-brand-emerald/50 px-4 py-1.5">
-              Rango personalizado
-            </button>
-          </form>
+          <SelectorRango
+            desdeInicial={rango.preset === 'custom' ? rango.desde.toISOString().slice(0, 10) : null}
+            hastaInicial={rango.preset === 'custom' ? rango.hasta.toISOString().slice(0, 10) : null}
+          />
           <p className="text-xs text-brand-muted mt-3">
             Mostrando: <span className="text-foreground font-medium">{rango.etiqueta}</span>
           </p>

@@ -7,6 +7,7 @@ import Toast, { type ToastTipo } from '@/components/toast'
 
 export type DatosReporte = {
   periodo: string
+  historial: { fecha: string; pendiente: number; enviada: number; resuelta: number }[]
   alertas: {
     pendiente: number
     enviada: number
@@ -74,31 +75,39 @@ async function exportarPDF(datos: DatosReporte) {
   // Encabezado de marca: banda oscura con logo, en vez de texto plano sobre
   // fondo blanco — Johanna lo describió como "horrible" en su forma anterior.
   doc.setFillColor(...COLOR_FONDO_OSCURO)
-  doc.rect(0, 0, anchoPagina, 32, 'F')
+  doc.rect(0, 0, anchoPagina, 30, 'F')
 
   const logo = await cargarLogoBase64()
   if (logo) {
-    doc.addImage(logo, 'PNG', 14, 6, 20, 20)
+    doc.addImage(logo, 'PNG', 14, 5, 18, 18)
   }
 
   doc.setTextColor(255, 255, 255)
-  doc.setFontSize(18)
+  doc.setFontSize(17)
   doc.setFont('helvetica', 'bold')
-  doc.text('SIMDES', logo ? 40 : 14, 16)
-  doc.setFontSize(11)
+  doc.text('SIMDES', logo ? 37 : 14, 15)
+  doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...COLOR_EMERALD)
-  doc.text('Reporte de Gestión y Gobierno de IA', logo ? 40 : 14, 24)
+  doc.text('Reporte de Gestión y Gobierno de IA', logo ? 37 : 14, 22)
 
-  doc.setFontSize(9)
-  doc.setTextColor(180, 180, 190)
-  doc.text(`Período: ${datos.periodo}`, anchoPagina - 14, 14, { align: 'right' })
-  doc.text(`Generado: ${new Date().toLocaleString('es-VE')}`, anchoPagina - 14, 20, { align: 'right' })
+  // Banner de período — pedido explícito de Johanna (12/09): antes era texto
+  // gris pequeño en la esquina, casi invisible. Ahora es una franja propia,
+  // el primer dato que se lee después del logo, no una nota al pie.
+  doc.setFillColor(...COLOR_EMERALD)
+  doc.rect(0, 30, anchoPagina, 11, 'F')
+  doc.setTextColor(...COLOR_FONDO_OSCURO)
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  doc.text(`PERÍODO DEL REPORTE: ${datos.periodo.toUpperCase()}`, 14, 37.5)
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Generado: ${new Date().toLocaleString('es-VE')}`, anchoPagina - 14, 37.5, { align: 'right' })
 
   doc.setTextColor(0, 0, 0)
 
   autoTable(doc, {
-    startY: 40,
+    startY: 48,
     head: [['Alertas', 'Cantidad']],
     body: [
       ['Pendientes', String(datos.alertas.pendiente)],
@@ -109,6 +118,16 @@ async function exportarPDF(datos: DatosReporte) {
     ],
     headStyles: { fillColor: [0, 212, 170] },
   })
+
+  if (datos.historial.length) {
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 10,
+      head: [['Fecha', 'Pendientes', 'Enviadas', 'Resueltas']],
+      body: datos.historial.map((h) => [h.fecha, String(h.pendiente), String(h.enviada), String(h.resuelta)]),
+      headStyles: { fillColor: [0, 212, 170] },
+      styles: { fontSize: 8 },
+    })
+  }
 
   autoTable(doc, {
     startY: doc.lastAutoTable.finalY + 10,
@@ -163,49 +182,178 @@ function descargarBlob(buffer: ArrayBuffer, tipo: string, nombre: string) {
   URL.revokeObjectURL(url)
 }
 
+// jsPDF y Excel comparten estas hex — ARGB con 'FF' de alfa por delante,
+// formato que exige exceljs.
+const ARGB_FONDO_OSCURO = 'FF0D0D0D'
+const ARGB_EMERALD = 'FF00D4AA'
+const ARGB_BORDE = 'FF2A2A45'
+const ARGB_BLANCO = 'FFF5F5F7'
+
+type ExcelJSModulo = typeof import('exceljs')
+type Workbook = InstanceType<ExcelJSModulo['Workbook']>
+type Worksheet = ReturnType<Workbook['addWorksheet']>
+
+const bordeFino = {
+  top: { style: 'thin' as const, color: { argb: ARGB_BORDE } },
+  left: { style: 'thin' as const, color: { argb: ARGB_BORDE } },
+  bottom: { style: 'thin' as const, color: { argb: ARGB_BORDE } },
+  right: { style: 'thin' as const, color: { argb: ARGB_BORDE } },
+}
+
+// Encabezado de marca consistente en cada hoja: logo + banda oscura con el
+// título + banda esmeralda con el período, igual que el PDF — antes el
+// Excel era una tabla plana sin logo ni formato, muy por detrás de la
+// pantalla y el PDF (feedback de Johanna, 12/09 madrugada).
+function agregarEncabezadoHoja(hoja: Worksheet, libro: Workbook, logo: string | null, periodo: string, columnas: number) {
+  const ultimaLetra = String.fromCharCode(65 + columnas - 1)
+
+  if (logo) {
+    const imgId = libro.addImage({ base64: logo, extension: 'png' })
+    hoja.addImage(imgId, 'A1:A3')
+  }
+
+  hoja.mergeCells(`B1:${ultimaLetra}1`)
+  const celdaTitulo = hoja.getCell('B1')
+  celdaTitulo.value = 'SIMDES — Reporte de Gestión y Gobierno de IA'
+  celdaTitulo.font = { bold: true, size: 13, color: { argb: ARGB_BLANCO } }
+  celdaTitulo.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ARGB_FONDO_OSCURO } }
+  celdaTitulo.alignment = { vertical: 'middle' }
+  hoja.getRow(1).height = 24
+
+  hoja.mergeCells(`B2:${ultimaLetra}2`)
+  const celdaPeriodo = hoja.getCell('B2')
+  celdaPeriodo.value = `PERÍODO DEL REPORTE: ${periodo.toUpperCase()}`
+  celdaPeriodo.font = { bold: true, size: 11, color: { argb: ARGB_FONDO_OSCURO } }
+  celdaPeriodo.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ARGB_EMERALD } }
+  celdaPeriodo.alignment = { vertical: 'middle' }
+  hoja.getRow(2).height = 20
+
+  hoja.getRow(3).height = 8
+}
+
+function estilizarFilaEncabezado(fila: ReturnType<Worksheet['getRow']>) {
+  fila.eachCell((celda) => {
+    celda.font = { bold: true, color: { argb: ARGB_FONDO_OSCURO } }
+    celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ARGB_EMERALD } }
+    celda.border = bordeFino
+    celda.alignment = { vertical: 'middle' }
+  })
+}
+
+function estilizarFilaDatos(fila: ReturnType<Worksheet['getRow']>) {
+  fila.eachCell((celda) => {
+    celda.border = bordeFino
+  })
+}
+
+// Barra de datos nativa de Excel (conditional formatting) — es lo que se le
+// puede pedir honestamente a exceljs como "gráfica nativa dentro de la
+// celda": la librería no genera objetos <c:chart> reales (ni la tenía la
+// alternativa xlsx/SheetJS gratuita que se descartó por seguridad el 12/09),
+// construir ese XML a mano a esta altura del proyecto es un riesgo real de
+// corromper el archivo. La barra de datos SÍ es 100% nativa de Excel (no una
+// imagen pegada) y el usuario puede seleccionar cualquier tabla de esta hoja
+// e insertar un gráfico real de Excel en 2 clics si lo necesita.
+function agregarBarraDeDatos(hoja: Worksheet, rango: string, prioridad: number) {
+  hoja.addConditionalFormatting({
+    ref: rango,
+    rules: [
+      {
+        type: 'dataBar',
+        priority: prioridad,
+        gradient: false,
+        showValue: true,
+        border: true,
+        cfvo: [{ type: 'min' }, { type: 'max' }],
+        color: { argb: ARGB_EMERALD },
+      } as never,
+    ],
+  })
+}
+
 async function exportarExcel(datos: DatosReporte) {
   const ExcelJS = (await import('exceljs')).default
   const libro = new ExcelJS.Workbook()
   libro.creator = 'SIMDES'
   libro.created = new Date()
+  const logo = await cargarLogoBase64()
 
+  // --- Resumen (portada) ---
+  const hojaResumen = libro.addWorksheet('Resumen')
+  hojaResumen.columns = [{ width: 4 }, { width: 30 }, { width: 18 }]
+  agregarEncabezadoHoja(hojaResumen, libro, logo, datos.periodo, 3)
+  const filaEncResumen = hojaResumen.addRow(['', 'Indicador', 'Valor'])
+  estilizarFilaEncabezado(filaEncResumen)
+  ;[
+    ['Alertas en el período', datos.alertas.total],
+    ['Tasa de resolución', datos.alertas.tasaResolucion !== null ? `${datos.alertas.tasaResolucion}%` : 'N/A'],
+    ['Llamadas de IA', datos.tokens.totalLlamadas],
+    ['Tokens totales consumidos', datos.tokens.totalTokens],
+    ['Contenedores con señal', datos.sensores.activos],
+    ['Contenedores sin señal', datos.sensores.sinSenal.length],
+  ].forEach((fila) => estilizarFilaDatos(hojaResumen.addRow(['', ...fila])))
+  hojaResumen.getColumn(1).width = 4
+
+  // --- Alertas ---
   const hojaAlertas = libro.addWorksheet('Alertas')
-  hojaAlertas.columns = [{ header: 'Alertas', key: 'a', width: 24 }, { header: 'Cantidad', key: 'b', width: 14 }]
-  hojaAlertas.addRows([
-    { a: 'Pendientes', b: datos.alertas.pendiente },
-    { a: 'Enviadas', b: datos.alertas.enviada },
-    { a: 'Resueltas', b: datos.alertas.resuelta },
-    { a: 'Total', b: datos.alertas.total },
-    { a: 'Tasa de resolución (%)', b: datos.alertas.tasaResolucion ?? 'N/A' },
-  ])
-  hojaAlertas.getRow(1).font = { bold: true }
+  hojaAlertas.columns = [{ width: 4 }, { width: 24 }, { width: 14 }]
+  agregarEncabezadoHoja(hojaAlertas, libro, logo, datos.periodo, 3)
+  estilizarFilaEncabezado(hojaAlertas.addRow(['', 'Alertas', 'Cantidad']))
+  const filaInicioAlertas = hojaAlertas.rowCount + 1
+  ;[
+    ['Pendientes', datos.alertas.pendiente],
+    ['Enviadas', datos.alertas.enviada],
+    ['Resueltas', datos.alertas.resuelta],
+    ['Total', datos.alertas.total],
+  ].forEach((fila) => estilizarFilaDatos(hojaAlertas.addRow(['', ...fila])))
+  estilizarFilaDatos(hojaAlertas.addRow(['', 'Tasa de resolución (%)', datos.alertas.tasaResolucion ?? 'N/A']))
+  agregarBarraDeDatos(hojaAlertas, `C${filaInicioAlertas}:C${filaInicioAlertas + 3}`, 1)
 
+  // --- Historial diario ---
+  const hojaHistorial = libro.addWorksheet('Historial diario')
+  hojaHistorial.columns = [{ width: 4 }, { width: 14 }, { width: 12 }, { width: 12 }, { width: 12 }]
+  agregarEncabezadoHoja(hojaHistorial, libro, logo, datos.periodo, 5)
+  estilizarFilaEncabezado(hojaHistorial.addRow(['', 'Fecha', 'Pendientes', 'Enviadas', 'Resueltas']))
+  const filaInicioHistorial = hojaHistorial.rowCount + 1
+  datos.historial.forEach((h) =>
+    estilizarFilaDatos(hojaHistorial.addRow(['', h.fecha, h.pendiente, h.enviada, h.resuelta]))
+  )
+  if (datos.historial.length) {
+    const filaFinHistorial = filaInicioHistorial + datos.historial.length - 1
+    agregarBarraDeDatos(hojaHistorial, `C${filaInicioHistorial}:C${filaFinHistorial}`, 2)
+    agregarBarraDeDatos(hojaHistorial, `D${filaInicioHistorial}:D${filaFinHistorial}`, 3)
+    agregarBarraDeDatos(hojaHistorial, `E${filaInicioHistorial}:E${filaFinHistorial}`, 4)
+  }
+
+  // --- Consumo IA ---
   const hojaTokens = libro.addWorksheet('Consumo IA')
-  hojaTokens.columns = [{ header: 'Métrica', key: 'a', width: 24 }, { header: 'Valor', key: 'b', width: 16 }]
-  hojaTokens.addRows([
-    { a: 'Llamadas', b: datos.tokens.totalLlamadas },
-    { a: 'Tokens totales', b: datos.tokens.totalTokens },
-    { a: 'Tokens de entrada', b: datos.tokens.totalPrompt },
-    { a: 'Tokens de salida', b: datos.tokens.totalCompletion },
-    { a: 'Promedio por llamada', b: datos.tokens.promedioPorLlamada },
-  ])
-  hojaTokens.getRow(1).font = { bold: true }
-  hojaTokens.addRow([])
-  const filaEncabezadoModelo = hojaTokens.addRow(['Modelo', 'Llamadas', 'Tokens'])
-  filaEncabezadoModelo.font = { bold: true }
-  datos.tokens.porModelo.forEach((m) => hojaTokens.addRow([m.modelo, m.llamadas, m.tokens]))
+  hojaTokens.columns = [{ width: 4 }, { width: 24 }, { width: 16 }]
+  agregarEncabezadoHoja(hojaTokens, libro, logo, datos.periodo, 3)
+  estilizarFilaEncabezado(hojaTokens.addRow(['', 'Métrica', 'Valor']))
+  ;[
+    ['Llamadas', datos.tokens.totalLlamadas],
+    ['Tokens totales', datos.tokens.totalTokens],
+    ['Tokens de entrada', datos.tokens.totalPrompt],
+    ['Tokens de salida', datos.tokens.totalCompletion],
+    ['Promedio por llamada', datos.tokens.promedioPorLlamada],
+  ].forEach((fila) => estilizarFilaDatos(hojaTokens.addRow(['', ...fila])))
+  if (datos.tokens.porModelo.length) {
+    hojaTokens.addRow([])
+    estilizarFilaEncabezado(hojaTokens.addRow(['', 'Modelo', 'Llamadas', 'Tokens']))
+    datos.tokens.porModelo.forEach((m) => estilizarFilaDatos(hojaTokens.addRow(['', m.modelo, m.llamadas, m.tokens])))
+  }
 
+  // --- Sensores ---
   const hojaSensores = libro.addWorksheet('Sensores')
-  hojaSensores.columns = [{ header: 'Estado', key: 'a', width: 24 }, { header: 'Cantidad', key: 'b', width: 14 }]
-  hojaSensores.addRows([
-    { a: 'Con señal reciente', b: datos.sensores.activos },
-    { a: 'Sin señal (>24h o nunca reportó)', b: datos.sensores.sinSenal.length },
-  ])
-  hojaSensores.getRow(1).font = { bold: true }
+  hojaSensores.columns = [{ width: 4 }, { width: 26 }, { width: 14 }]
+  agregarEncabezadoHoja(hojaSensores, libro, logo, datos.periodo, 3)
+  estilizarFilaEncabezado(hojaSensores.addRow(['', 'Estado', 'Cantidad']))
+  estilizarFilaDatos(hojaSensores.addRow(['', 'Con señal reciente', datos.sensores.activos]))
+  estilizarFilaDatos(hojaSensores.addRow(['', 'Sin señal (>24h o nunca reportó)', datos.sensores.sinSenal.length]))
   if (datos.sensores.sinSenal.length) {
     hojaSensores.addRow([])
-    hojaSensores.addRow(['Contenedores sin señal:'])
-    datos.sensores.sinSenal.forEach((codigo) => hojaSensores.addRow([codigo]))
+    estilizarFilaEncabezado(hojaSensores.addRow(['', 'Contenedores sin señal', '']))
+    datos.sensores.sinSenal.forEach((codigo) => estilizarFilaDatos(hojaSensores.addRow(['', codigo])))
   }
 
   const buffer = await libro.xlsx.writeBuffer()
