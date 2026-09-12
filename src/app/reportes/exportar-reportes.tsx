@@ -6,6 +6,7 @@ import autoTable from 'jspdf-autotable'
 import Toast, { type ToastTipo } from '@/components/toast'
 
 export type DatosReporte = {
+  periodo: string
   alertas: {
     pendiente: number
     enviada: number
@@ -21,15 +22,20 @@ export type DatosReporte = {
     promedioPorLlamada: number
     porModelo: { modelo: string; llamadas: number; tokens: number }[]
   }
+  sensores: {
+    activos: number
+    sinSenal: string[]
+  }
 }
 
 // jspdf-autotable extiende jsPDF en tiempo de ejecución con `lastAutoTable`,
 // pero el tipo de jsPDF no lo declara — se tipa acá en vez de usar `any`.
 type DocConAutoTable = jsPDF & { lastAutoTable: { finalY: number } }
 
-function nombreArchivo(extension: string) {
+function nombreArchivo(extension: string, periodo: string) {
   const fecha = new Date().toISOString().slice(0, 10)
-  return `simdes-reporte-${fecha}.${extension}`
+  const periodoSeguro = periodo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+  return `simdes-reporte-${periodoSeguro}-${fecha}.${extension}`
 }
 
 // Convierte el logo público a data URL para poder embeberlo en el PDF —
@@ -86,7 +92,8 @@ async function exportarPDF(datos: DatosReporte) {
 
   doc.setFontSize(9)
   doc.setTextColor(180, 180, 190)
-  doc.text(`Generado: ${new Date().toLocaleString('es-VE')}`, anchoPagina - 14, 16, { align: 'right' })
+  doc.text(`Período: ${datos.periodo}`, anchoPagina - 14, 14, { align: 'right' })
+  doc.text(`Generado: ${new Date().toLocaleString('es-VE')}`, anchoPagina - 14, 20, { align: 'right' })
 
   doc.setTextColor(0, 0, 0)
 
@@ -125,12 +132,23 @@ async function exportarPDF(datos: DatosReporte) {
     })
   }
 
+  autoTable(doc, {
+    startY: doc.lastAutoTable.finalY + 10,
+    head: [['Estado de sensores', 'Cantidad']],
+    body: [
+      ['Con señal reciente', String(datos.sensores.activos)],
+      ['Sin señal (' + '>' + '24h o nunca reportó)', String(datos.sensores.sinSenal.length)],
+      ...(datos.sensores.sinSenal.length ? [['Contenedores afectados', datos.sensores.sinSenal.join(', ')]] : []),
+    ],
+    headStyles: { fillColor: [0, 212, 170] },
+  })
+
   const alturaPagina = doc.internal.pageSize.getHeight()
   doc.setFontSize(8)
   doc.setTextColor(150, 150, 150)
   doc.text('SIMDES — Sistema Inteligente de Monitoreo y Predicción de Desechos Sólidos', 14, alturaPagina - 8)
 
-  doc.save(nombreArchivo('pdf'))
+  doc.save(nombreArchivo('pdf', datos.periodo))
 }
 
 function descargarBlob(buffer: ArrayBuffer, tipo: string, nombre: string) {
@@ -177,11 +195,24 @@ async function exportarExcel(datos: DatosReporte) {
   filaEncabezadoModelo.font = { bold: true }
   datos.tokens.porModelo.forEach((m) => hojaTokens.addRow([m.modelo, m.llamadas, m.tokens]))
 
+  const hojaSensores = libro.addWorksheet('Sensores')
+  hojaSensores.columns = [{ header: 'Estado', key: 'a', width: 24 }, { header: 'Cantidad', key: 'b', width: 14 }]
+  hojaSensores.addRows([
+    { a: 'Con señal reciente', b: datos.sensores.activos },
+    { a: 'Sin señal (>24h o nunca reportó)', b: datos.sensores.sinSenal.length },
+  ])
+  hojaSensores.getRow(1).font = { bold: true }
+  if (datos.sensores.sinSenal.length) {
+    hojaSensores.addRow([])
+    hojaSensores.addRow(['Contenedores sin señal:'])
+    datos.sensores.sinSenal.forEach((codigo) => hojaSensores.addRow([codigo]))
+  }
+
   const buffer = await libro.xlsx.writeBuffer()
   descargarBlob(
     buffer as ArrayBuffer,
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    nombreArchivo('xlsx')
+    nombreArchivo('xlsx', datos.periodo)
   )
 }
 
