@@ -778,6 +778,7 @@ erDiagram
         text nombre
         text chat_id_telegram
         text zona_asignada
+        text empresa
     }
     PERFILES {
         uuid id PK
@@ -838,7 +839,9 @@ Salida del motor de IA. Columnas clave: `contenedor_id` (FK), `horas_estimadas_s
 Registro de despachos por umbral crítico. Columnas clave: `contenedor_id`/`prediccion_id`/`cuadrilla_id` (FK), `canal` (`'telegram'`), `estado` (default `'pendiente'`), `creado_en`, `resuelto_en`. `estado`/`resuelto_en` están preparados para la acción pendiente de "marcar resuelta" por Cuadrilla (sección 3.8).
 
 ### 9.3.5 `cuadrillas`
-Actor operativo. Columnas clave: `nombre`, `chat_id_telegram` (canal real de Telegram), `zona_asignada`. Diseñada desde antes de esta sesión, evidencia de que el rol Cuadrilla no fue una ocurrencia tardía en el modelo de datos, aunque sí lo fue en el modelo de roles de acceso (sección 3.8). **RLS corregido el 11/09.**
+Actor operativo. Columnas clave: `nombre`, `chat_id_telegram` (canal real de Telegram), `zona_asignada`, `empresa` (texto opcional, agregado 2026-09-12). Diseñada desde antes de esta sesión, evidencia de que el rol Cuadrilla no fue una ocurrencia tardía en el modelo de datos, aunque sí lo fue en el modelo de roles de acceso (sección 3.8). **RLS corregido el 11/09.**
+
+**Decisión de modelado — cuadrilla vs. empresa/ente operador (2026-09-12):** Johanna cuestionó si el modelo actual (una fila de `cuadrillas` = una zona geográfica) representa bien la realidad, dado que SIMDES se contrata a un ente municipal (sección "Modelo de Viabilidad") que podría operar varias cuadrillas a la vez. La investigación (práctica real de gestión de residuos municipales — "franchise zones"/"collection districts": un contratista/empresa recibe una zona por concesión exclusiva; "macrorouting": esa zona se subdivide en rutas diarias, cada una cubierta por una cuadrilla/vehículo) confirma que **cuadrilla y empresa son dos niveles distintos de la misma jerarquía, no el mismo concepto compitiendo por un solo campo**. Se evaluaron 3 opciones: (A) no cambiar nada, (B) agregar `empresa` como campo descriptivo sin tabla nueva, (C) modelo completo de dos niveles (`empresas_aseo` 1→N `cuadrillas`). Se eligió **(B)**: reconoce el concepto real sin migrar la única cuadrilla existente ni tocar una lógica de asignación de alertas que nunca se ha probado con más de una candidata — la jerarquía completa (C) queda documentada como ruta de escalamiento futura, igual que la multi-tenencia municipal ya diferida en la sección "Modelo de Viabilidad". `empresa` de "Cuadrilla Norte" se pobló con `'SupraGuayana'`, el ente operativo real ya nombrado en ese apartado.
 
 ### 9.3.6 `perfiles`
 Nueva (11/09). Enlaza `auth.users` con un rol de negocio. Columnas: `id` (PK/FK a `auth.users`), `rol` (CHECK: administrador/directiva/cuadrilla), `cuadrilla_id` (FK opcional), `nombre`. RLS: cada usuario lee solo su propia fila.
