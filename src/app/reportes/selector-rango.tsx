@@ -90,7 +90,18 @@ export default function SelectorRango({
       </button>
 
       {abierto && (
-        <div className="modal-entrada absolute z-40 mt-2 tarjeta-vidrio p-3 w-64 left-0">
+        <div className="modal-entrada absolute z-40 mt-2 popover-solido p-3 w-64 left-0">
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className={`rounded-lg px-2 py-1.5 border transition ${!hasta && desde ? 'border-brand-emerald bg-brand-emerald/10' : 'border-brand-border'}`}>
+              <p className="text-[9px] uppercase tracking-wide text-brand-muted">Desde</p>
+              <p className="text-xs font-semibold text-foreground">{desde ? aIso(desde) : '—'}</p>
+            </div>
+            <div className={`rounded-lg px-2 py-1.5 border transition ${desde && !hasta ? 'border-brand-emerald/40' : 'border-brand-border'}`}>
+              <p className="text-[9px] uppercase tracking-wide text-brand-muted">Hasta</p>
+              <p className="text-xs font-semibold text-foreground">{hasta ? aIso(hasta) : '—'}</p>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between mb-2">
             <button
               type="button"
