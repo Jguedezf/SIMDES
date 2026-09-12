@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { nivelClaseTailwind } from '@/lib/nivel'
-import MapaContenedoresWrapper from '@/components/mapa-contenedores-wrapper'
+import MapaPanel from '@/components/mapa-panel'
 import Link from 'next/link'
 import { obtenerPerfil } from '@/lib/auth'
 import { cerrarSesion } from '@/app/login/actions'
@@ -132,7 +132,7 @@ export default async function DashboardPage() {
           <h2 className="font-semibold text-foreground mb-4">Mapa de contenedores</h2>
           {contenedoresMapa.length ? (
             <div className="overflow-hidden rounded-xl border border-brand-border">
-              <MapaContenedoresWrapper contenedores={contenedoresMapa} />
+              <MapaPanel contenedores={contenedoresMapa} editable={perfil?.rol === 'administrador'} />
             </div>
           ) : (
             <p className="text-brand-muted text-sm">Ningún contenedor tiene coordenadas registradas todavía.</p>

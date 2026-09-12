@@ -96,9 +96,22 @@ function construirPopup(punto: PuntoMapa) {
   return contenedorHtml
 }
 
-export default function MapaContenedores({ contenedores }: { contenedores: ContenedorMapa[] }) {
+type Props = {
+  contenedores: ContenedorMapa[]
+  editable?: boolean
+  onReubicar?: (idsContenedores: string[], lat: number, lng: number) => void
+}
+
+export default function MapaContenedores({ contenedores, editable, onReubicar }: Props) {
   const divRef = useRef<HTMLDivElement>(null)
   const mapaRef = useRef<LeafletMap | null>(null)
+  // Ref para que el listener de dragend (creado una sola vez, dentro del
+  // efecto de inicialización) siempre llame a la versión más reciente del
+  // callback sin tener que reconstruir todo el mapa cuando cambia.
+  const onReubicarRef = useRef(onReubicar)
+  useEffect(() => {
+    onReubicarRef.current = onReubicar
+  })
 
   useEffect(() => {
     let cancelado = false
@@ -127,9 +140,27 @@ export default function MapaContenedores({ contenedores }: { contenedores: Conte
       agruparPorPunto(contenedores).forEach((punto) => {
         const icono = crearIconoContenedor(L, nivelColorHex(punto.nivelCritico))
 
-        L.marker([punto.lat, punto.lng], { icon: icono })
+        const marcador = L.marker([punto.lat, punto.lng], { icon: icono, draggable: Boolean(editable) })
           .addTo(mapa)
           .bindPopup(construirPopup(punto), { className: 'popup-simdes' })
+
+        if (editable) {
+          // Efecto visual mientras se arrastra: se levanta y brilla más.
+          marcador.on('dragstart', () => {
+            marcador.closePopup()
+            marcador.getElement()?.classList.add('marcador-arrastrando')
+          })
+
+          marcador.on('dragend', () => {
+            marcador.getElement()?.classList.remove('marcador-arrastrando')
+            const { lat, lng } = marcador.getLatLng()
+            onReubicarRef.current?.(
+              punto.contenedores.map((c) => c.id),
+              Number(lat.toFixed(6)),
+              Number(lng.toFixed(6))
+            )
+          })
+        }
       })
     })
 
@@ -138,6 +169,9 @@ export default function MapaContenedores({ contenedores }: { contenedores: Conte
       mapaRef.current?.remove()
       mapaRef.current = null
     }
+    // `editable` viene del rol de la sesión — no cambia mientras la página
+    // está montada, así que no hace falta reconstruir el mapa si cambiara.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contenedores])
 
   return <div ref={divRef} className="mapa-oscuro w-full h-[420px] rounded-xl" />
