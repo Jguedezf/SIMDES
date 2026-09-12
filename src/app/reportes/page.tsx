@@ -78,18 +78,18 @@ export default async function ReportesPage() {
 
         <ExportarReportes datos={datosReporte} />
 
-        <div className="rounded-2xl border border-brand-border bg-brand-surface/60 p-5 mb-6">
+        <div className="tarjeta-interactiva rounded-2xl border border-brand-border bg-brand-surface/60 p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-4">Alertas — pendientes vs. resueltas</h2>
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="rounded-lg p-3 text-center bg-brand-coral/10">
+            <div className="tarjeta-interactiva rounded-lg p-3 text-center bg-brand-coral/10 border border-transparent">
               <p className="text-2xl font-bold text-brand-coral">{alertasPorEstado.pendiente}</p>
               <p className="text-xs text-brand-coral/80">Pendientes</p>
             </div>
-            <div className="rounded-lg p-3 text-center bg-brand-amber/10">
+            <div className="tarjeta-interactiva rounded-lg p-3 text-center bg-brand-amber/10 border border-transparent">
               <p className="text-2xl font-bold text-brand-amber">{alertasPorEstado.enviada}</p>
               <p className="text-xs text-brand-amber/80">Enviadas</p>
             </div>
-            <div className="rounded-lg p-3 text-center bg-brand-emerald/10">
+            <div className="tarjeta-interactiva rounded-lg p-3 text-center bg-brand-emerald/10 border border-transparent">
               <p className="text-2xl font-bold text-brand-emerald">{alertasPorEstado.resuelta}</p>
               <p className="text-xs text-brand-emerald/80">Resueltas</p>
             </div>
@@ -103,18 +103,18 @@ export default async function ReportesPage() {
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-brand-border bg-brand-surface/60 p-5">
+        <div className="tarjeta-interactiva rounded-2xl border border-brand-border bg-brand-surface/60 p-5">
           <h2 className="font-semibold text-foreground mb-4">Consumo de tokens de IA</h2>
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="rounded-lg p-3 text-center bg-white/5">
+            <div className="tarjeta-interactiva rounded-lg p-3 text-center bg-white/5 border border-transparent">
               <p className="text-2xl font-bold text-foreground">{totalLlamadas}</p>
               <p className="text-xs text-brand-muted">Llamadas</p>
             </div>
-            <div className="rounded-lg p-3 text-center bg-white/5">
+            <div className="tarjeta-interactiva rounded-lg p-3 text-center bg-white/5 border border-transparent">
               <p className="text-2xl font-bold text-foreground">{totalTokens.toLocaleString('es-VE')}</p>
               <p className="text-xs text-brand-muted">Tokens totales</p>
             </div>
-            <div className="rounded-lg p-3 text-center bg-white/5">
+            <div className="tarjeta-interactiva rounded-lg p-3 text-center bg-white/5 border border-transparent">
               <p className="text-2xl font-bold text-foreground">{promedioPorLlamada}</p>
               <p className="text-xs text-brand-muted">Promedio/llamada</p>
             </div>
@@ -133,7 +133,7 @@ export default async function ReportesPage() {
             </thead>
             <tbody>
               {Array.from(porModelo.entries()).map(([modelo, datos]) => (
-                <tr key={modelo} className="border-b border-brand-border/60 last:border-0">
+                <tr key={modelo} className="border-b border-brand-border/60 last:border-0 hover:bg-white/5 transition-colors">
                   <td className="py-2 text-foreground">{modelo}</td>
                   <td className="py-2 text-right text-brand-muted">{datos.llamadas}</td>
                   <td className="py-2 text-right text-brand-muted">{datos.tokens.toLocaleString('es-VE')}</td>

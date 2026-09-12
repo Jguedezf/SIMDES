@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import Toast, { type ToastTipo } from '@/components/toast'
 
 export type DatosReporte = {
   alertas: {
@@ -31,17 +32,66 @@ function nombreArchivo(extension: string) {
   return `simdes-reporte-${fecha}.${extension}`
 }
 
-function exportarPDF(datos: DatosReporte) {
+// Convierte el logo público a data URL para poder embeberlo en el PDF —
+// jsPDF corre en el navegador, no puede leer el archivo del filesystem.
+// El logo original es 1254x1254 (~1.2MB) — insertarlo tal cual infla el PDF
+// a varios MB aunque se muestre pequeño (jsPDF embebe los píxeles reales,
+// no el tamaño de despliegue). Se redimensiona a 160x160 vía canvas antes
+// de convertir a base64.
+async function cargarLogoBase64(): Promise<string | null> {
+  try {
+    const res = await fetch('/images/logo.png')
+    const blob = await res.blob()
+    const bitmap = await createImageBitmap(blob)
+
+    const tamano = 160
+    const canvas = document.createElement('canvas')
+    canvas.width = tamano
+    canvas.height = tamano
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
+    ctx.drawImage(bitmap, 0, 0, tamano, tamano)
+
+    return canvas.toDataURL('image/png')
+  } catch {
+    return null
+  }
+}
+
+const COLOR_FONDO_OSCURO: [number, number, number] = [13, 13, 13]
+const COLOR_EMERALD: [number, number, number] = [0, 212, 170]
+
+async function exportarPDF(datos: DatosReporte) {
   const doc = new jsPDF() as DocConAutoTable
-  doc.setFontSize(16)
-  doc.text('SIMDES — Reporte de Gestión', 14, 18)
-  doc.setFontSize(10)
-  doc.setTextColor(120)
-  doc.text(`Generado: ${new Date().toLocaleString('es-VE')}`, 14, 25)
-  doc.setTextColor(0)
+  const anchoPagina = doc.internal.pageSize.getWidth()
+
+  // Encabezado de marca: banda oscura con logo, en vez de texto plano sobre
+  // fondo blanco — Johanna lo describió como "horrible" en su forma anterior.
+  doc.setFillColor(...COLOR_FONDO_OSCURO)
+  doc.rect(0, 0, anchoPagina, 32, 'F')
+
+  const logo = await cargarLogoBase64()
+  if (logo) {
+    doc.addImage(logo, 'PNG', 14, 6, 20, 20)
+  }
+
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(18)
+  doc.setFont('helvetica', 'bold')
+  doc.text('SIMDES', logo ? 40 : 14, 16)
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...COLOR_EMERALD)
+  doc.text('Reporte de Gestión y Gobierno de IA', logo ? 40 : 14, 24)
+
+  doc.setFontSize(9)
+  doc.setTextColor(180, 180, 190)
+  doc.text(`Generado: ${new Date().toLocaleString('es-VE')}`, anchoPagina - 14, 16, { align: 'right' })
+
+  doc.setTextColor(0, 0, 0)
 
   autoTable(doc, {
-    startY: 32,
+    startY: 40,
     head: [['Alertas', 'Cantidad']],
     body: [
       ['Pendientes', String(datos.alertas.pendiente)],
@@ -74,6 +124,11 @@ function exportarPDF(datos: DatosReporte) {
       headStyles: { fillColor: [0, 212, 170] },
     })
   }
+
+  const alturaPagina = doc.internal.pageSize.getHeight()
+  doc.setFontSize(8)
+  doc.setTextColor(150, 150, 150)
+  doc.text('SIMDES — Sistema Inteligente de Monitoreo y Predicción de Desechos Sólidos', 14, alturaPagina - 8)
 
   doc.save(nombreArchivo('pdf'))
 }
@@ -131,32 +186,54 @@ async function exportarExcel(datos: DatosReporte) {
 }
 
 export default function ExportarReportes({ datos }: { datos: DatosReporte }) {
+  const [exportandoPDF, setExportandoPDF] = useState(false)
   const [exportandoExcel, setExportandoExcel] = useState(false)
+  const [toast, setToast] = useState<{ mensaje: string; tipo: ToastTipo } | null>(null)
+
+  async function manejarPDF() {
+    setExportandoPDF(true)
+    try {
+      await exportarPDF(datos)
+      setToast({ mensaje: 'PDF generado y descargado.', tipo: 'exito' })
+    } catch {
+      setToast({ mensaje: 'No se pudo generar el PDF.', tipo: 'error' })
+    } finally {
+      setExportandoPDF(false)
+    }
+  }
 
   async function manejarExcel() {
     setExportandoExcel(true)
     try {
       await exportarExcel(datos)
+      setToast({ mensaje: 'Excel generado y descargado.', tipo: 'exito' })
+    } catch {
+      setToast({ mensaje: 'No se pudo generar el Excel.', tipo: 'error' })
     } finally {
       setExportandoExcel(false)
     }
   }
 
   return (
-    <div className="flex gap-2 mb-6">
-      <button
-        onClick={() => exportarPDF(datos)}
-        className="text-sm font-semibold text-brand-bg bg-brand-emerald hover:brightness-110 transition px-4 py-2 rounded-lg"
-      >
-        Exportar PDF
-      </button>
-      <button
-        onClick={manejarExcel}
-        disabled={exportandoExcel}
-        className="text-sm font-semibold text-foreground border border-brand-border hover:border-brand-emerald/50 transition px-4 py-2 rounded-lg disabled:opacity-50"
-      >
-        {exportandoExcel ? 'Generando...' : 'Exportar Excel'}
-      </button>
-    </div>
+    <>
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={manejarPDF}
+          disabled={exportandoPDF}
+          className="text-sm font-semibold text-brand-bg bg-brand-emerald hover:brightness-110 transition px-4 py-2 rounded-lg disabled:opacity-50"
+        >
+          {exportandoPDF ? 'Generando...' : 'Exportar PDF'}
+        </button>
+        <button
+          onClick={manejarExcel}
+          disabled={exportandoExcel}
+          className="text-sm font-semibold text-foreground border border-brand-border hover:border-brand-emerald/50 transition px-4 py-2 rounded-lg disabled:opacity-50"
+        >
+          {exportandoExcel ? 'Generando...' : 'Exportar Excel'}
+        </button>
+      </div>
+
+      {toast && <Toast mensaje={toast.mensaje} tipo={toast.tipo} onCerrar={() => setToast(null)} />}
+    </>
   )
 }
