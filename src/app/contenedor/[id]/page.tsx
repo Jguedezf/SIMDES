@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import Link from 'next/link'
+import { crearClienteNavegador } from '@/lib/supabase-navegador'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
@@ -13,6 +14,14 @@ type Contenedor = {
   tipo_residuo: string
   capacidad_litros: number
   estado: string
+}
+
+const ESTADOS_CONTENEDOR = ['activo', 'mantenimiento', 'fuera_de_servicio'] as const
+
+const estadoEtiqueta: Record<string, string> = {
+  activo: 'Activo',
+  mantenimiento: 'En mantenimiento',
+  fuera_de_servicio: 'Fuera de servicio',
 }
 
 type Lectura = { nivel_pct: number; timestamp: string }
@@ -32,11 +41,30 @@ const riesgoColor: Record<string, string> = {
 
 export default function DetalleContenedorPage() {
   const params = useParams<{ id: string }>()
+  const [supabase] = useState(() => crearClienteNavegador())
   const [contenedor, setContenedor] = useState<Contenedor | null>(null)
   const [lecturas, setLecturas] = useState<Lectura[]>([])
   const [prediccion, setPrediccion] = useState<Prediccion | null>(null)
   const [simulando, setSimulando] = useState(false)
   const [mensaje, setMensaje] = useState('')
+  const [guardandoEstado, setGuardandoEstado] = useState(false)
+  const [mensajeEstado, setMensajeEstado] = useState('')
+  const [esAdministrador, setEsAdministrador] = useState(false)
+
+  useEffect(() => {
+    async function verificarRol() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: perfil } = await supabase
+        .from('perfiles')
+        .select('rol')
+        .eq('id', user.id)
+        .single()
+      setEsAdministrador(perfil?.rol === 'administrador')
+    }
+    verificarRol()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function cargarDatos() {
     const { data: c } = await supabase
@@ -65,6 +93,7 @@ export default function DetalleContenedorPage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- carga de datos al montar/cambiar de contenedor, no un derivado de estado existente
     cargarDatos()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id])
@@ -101,6 +130,29 @@ export default function DetalleContenedorPage() {
     }
   }
 
+  async function cambiarEstado(nuevoEstado: string) {
+    if (!contenedor || nuevoEstado === contenedor.estado) return
+    setGuardandoEstado(true)
+    setMensajeEstado('')
+
+    const { error } = await supabase
+      .from('contenedores')
+      .update({ estado: nuevoEstado })
+      .eq('id', contenedor.id)
+
+    if (error) {
+      setMensajeEstado(
+        error.code === '42501'
+          ? 'No se pudo guardar: falta permiso de actualización en la base de datos (RLS).'
+          : `No se pudo guardar el estado: ${error.message}`
+      )
+    } else {
+      setContenedor({ ...contenedor, estado: nuevoEstado })
+      setMensajeEstado('Estado actualizado.')
+    }
+    setGuardandoEstado(false)
+  }
+
   if (!contenedor) {
     return <main className="p-6 text-gray-400">Cargando...</main>
   }
@@ -108,7 +160,7 @@ export default function DetalleContenedorPage() {
   return (
     <main className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-3xl mx-auto">
-        <a href="/" className="text-sm text-blue-600 hover:underline">← Volver al panel</a>
+        <Link href="/" className="text-sm text-blue-600 hover:underline">← Volver al panel</Link>
 
         <div className="flex items-center justify-between mt-2 mb-6">
           <div>
@@ -125,6 +177,35 @@ export default function DetalleContenedorPage() {
         </div>
 
         {mensaje && <p className="text-sm text-gray-500 mb-4">{mensaje}</p>}
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
+          <h2 className="font-semibold text-gray-900 mb-3">Estado del contenedor</h2>
+          {esAdministrador ? (
+            <>
+              <div className="flex flex-wrap items-center gap-2">
+                {ESTADOS_CONTENEDOR.map((valor) => (
+                  <button
+                    key={valor}
+                    onClick={() => cambiarEstado(valor)}
+                    disabled={guardandoEstado || valor === contenedor.estado}
+                    className={`text-sm font-semibold px-3 py-1.5 rounded-lg border transition-colors disabled:cursor-default ${
+                      valor === contenedor.estado
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50'
+                    }`}
+                  >
+                    {estadoEtiqueta[valor]}
+                  </button>
+                ))}
+              </div>
+              {mensajeEstado && <p className="text-sm text-gray-500 mt-3">{mensajeEstado}</p>}
+            </>
+          ) : (
+            <span className="text-sm font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600">
+              {estadoEtiqueta[contenedor.estado] ?? contenedor.estado}
+            </span>
+          )}
+        </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
           <h2 className="font-semibold text-gray-900 mb-4">Historial de llenado</h2>

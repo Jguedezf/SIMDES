@@ -1,4 +1,7 @@
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { obtenerPerfil } from '@/lib/auth'
+import BotonResolverAlerta from './boton-resolver'
 
 type Alerta = {
   id: string
@@ -7,6 +10,7 @@ type Alerta = {
   estado: string
   creado_en: string
   contenedor_id: string
+  cuadrilla_id: string | null
   contenedores: { codigo: string } | null
   cuadrillas: { nombre: string } | null
 }
@@ -18,16 +22,18 @@ const estadoColor: Record<string, string> = {
 }
 
 export default async function AlertasPage() {
+  const perfil = await obtenerPerfil()
+
   const { data: alertas } = (await supabase
     .from('alertas')
-    .select('id, mensaje, canal, estado, creado_en, contenedor_id, contenedores(codigo), cuadrillas(nombre)')
+    .select('id, mensaje, canal, estado, creado_en, contenedor_id, cuadrilla_id, contenedores(codigo), cuadrillas(nombre)')
     .order('creado_en', { ascending: false })
     .limit(50)) as { data: Alerta[] | null }
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-3xl mx-auto">
-        <a href="/" className="text-sm text-blue-600 hover:underline">← Volver al panel</a>
+        <Link href="/" className="text-sm text-blue-600 hover:underline">← Volver al panel</Link>
         <h1 className="text-2xl font-bold text-gray-900 mt-2 mb-6">Panel de Alertas</h1>
 
         <div className="space-y-3">
@@ -43,6 +49,11 @@ export default async function AlertasPage() {
               <p className="text-xs text-gray-400 mt-2">
                 {a.canal} · {a.cuadrillas?.nombre ?? 'Sin cuadrilla'} · {new Date(a.creado_en).toLocaleString('es-VE')}
               </p>
+              {a.estado !== 'resuelta' &&
+                (perfil?.rol === 'administrador' ||
+                  (perfil?.rol === 'cuadrilla' && perfil.cuadrilla_id === a.cuadrilla_id)) && (
+                  <BotonResolverAlerta alertaId={a.id} />
+                )}
             </div>
           ))}
         </div>
