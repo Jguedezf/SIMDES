@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { exigirRol } from '@/lib/auth'
 import { crearClienteServidor } from '@/lib/supabase-servidor'
 import ExportarReportes from './exportar-reportes'
+import GraficoAlertas from './grafico-alertas'
 
 type UsoTokens = {
   workflow: string
@@ -94,7 +95,14 @@ export default async function ReportesPage() {
               <p className="text-xs text-brand-emerald/80">Resueltas</p>
             </div>
           </div>
-          <p className="text-sm text-brand-muted">
+
+          <GraficoAlertas
+            pendiente={alertasPorEstado.pendiente}
+            enviada={alertasPorEstado.enviada}
+            resuelta={alertasPorEstado.resuelta}
+          />
+
+          <p className="text-sm text-brand-muted mt-4">
             {totalAlertas} alertas en total.{' '}
             {tasaResolucion !== null && <>Tasa de resolución: {tasaResolucion}%.</>}
           </p>
