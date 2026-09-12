@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { exigirRol } from '@/lib/auth'
-import { supabase } from '@/lib/supabase'
+import { crearClienteServidor } from '@/lib/supabase-servidor'
 import ExportarReportes from './exportar-reportes'
 
 type UsoTokens = {
@@ -14,10 +14,16 @@ type UsoTokens = {
 type Alerta = { estado: string }
 
 export default async function ReportesPage() {
+  // uso_tokens_ia y reportes están restringidos a administrador/directiva a
+  // nivel de RLS (no solo a nivel de página) — hace falta el cliente que
+  // lleva la sesión (cookies), no el cliente anónimo, para que auth.uid()
+  // resuelva dentro de la policy. Ver docs/BITACORA-LOCAL.md Bloque 22.
+  const supabaseServidor = await crearClienteServidor()
+
   const [perfil, { data: usoTokens }, { data: alertas }] = await Promise.all([
     exigirRol('administrador', 'directiva'),
-    supabase.from('uso_tokens_ia').select('workflow, modelo, prompt_tokens, completion_tokens, total_tokens'),
-    supabase.from('alertas').select('estado'),
+    supabaseServidor.from('uso_tokens_ia').select('workflow, modelo, prompt_tokens, completion_tokens, total_tokens'),
+    supabaseServidor.from('alertas').select('estado'),
   ])
   const filasTokens = (usoTokens ?? []) as UsoTokens[]
   const filasAlertas = (alertas ?? []) as Alerta[]
