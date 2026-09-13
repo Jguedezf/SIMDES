@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { obtenerPerfil } from '@/lib/auth'
 import Navbar from '@/components/navbar'
 import FondoPantalla from '@/components/fondo-pantalla'
-import { nivelClaseTailwind } from '@/lib/nivel'
+import { nivelClaseTailwind, NIVEL_UMBRAL_ALTO } from '@/lib/nivel'
 import { ZONA_ETIQUETA, type TipoResiduo, type ZonaTipo } from '@/lib/codigo-contenedor'
 
 type Contenedor = {
@@ -27,7 +27,7 @@ const estadoEtiqueta: Record<string, string> = {
   activo: 'Activo', mantenimiento: 'En mantenimiento', fuera_de_servicio: 'Fuera de servicio',
 }
 
-type BusquedaParams = { tipo?: string; estado?: string; zona?: string; eliminados?: string }
+type BusquedaParams = { tipo?: string; estado?: string; zona?: string; eliminados?: string; nivel?: string }
 
 export default async function ListadoContenedoresPage({
   searchParams,
@@ -50,6 +50,7 @@ export default async function ListadoContenedoresPage({
   const tipo = TIPOS.find((t) => t === sp.tipo)
   const estado = ESTADOS.find((e) => e === sp.estado)
   const zona = ZONAS.find((z) => z === sp.zona)
+  const nivelCritico = sp.nivel === 'critico'
 
   if (!verEliminados) consulta = consulta.is('eliminado_en', null)
   if (tipo) consulta = consulta.eq('tipo_residuo', tipo)
@@ -64,8 +65,14 @@ export default async function ListadoContenedoresPage({
   const nivelPorContenedor = new Map<string, number>()
   lecturas?.forEach((l) => nivelPorContenedor.set(l.contenedor_id, l.nivel_pct))
 
-  const filas = (contenedores ?? []) as Contenedor[]
-  const hayFiltros = Boolean(tipo || estado || zona)
+  // "En nivel crítico" (link desde el dashboard) se filtra aquí, en memoria,
+  // porque depende del join con ultima_lectura_por_contenedor — no es una
+  // columna propia de `contenedores` que se pueda pasar a Supabase arriba.
+  const filasSinNivel = (contenedores ?? []) as Contenedor[]
+  const filas = nivelCritico
+    ? filasSinNivel.filter((c) => (nivelPorContenedor.get(c.id) ?? 0) >= NIVEL_UMBRAL_ALTO)
+    : filasSinNivel
+  const hayFiltros = Boolean(tipo || estado || zona || nivelCritico)
 
   return (
     <main className="min-h-screen relative">
@@ -75,7 +82,17 @@ export default async function ListadoContenedoresPage({
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Contenedores</h1>
-            <p className="text-brand-muted text-sm">{filas.length} registro{filas.length === 1 ? '' : 's'}</p>
+            <p className="text-brand-muted text-sm">
+              {filas.length} registro{filas.length === 1 ? '' : 's'}
+              {nivelCritico && (
+                <>
+                  {' — '}
+                  <Link href="/contenedores" className="text-brand-coral font-semibold hover:underline">
+                    filtrando por nivel crítico (≥{NIVEL_UMBRAL_ALTO}%) ✕
+                  </Link>
+                </>
+              )}
+            </p>
           </div>
           {esAdministrador && (
             <Link
