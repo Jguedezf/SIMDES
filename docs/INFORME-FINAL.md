@@ -21,7 +21,7 @@ Guédez, Johanna / C.I.: V-14.089.807
 Ciudad Guayana, Venezuela\
 11 de septiembre de 2026
 
-> **Nota sobre esta versión.** Este documento es la versión final consolidada del informe, redactada en Markdown a partir de: (1) el contenido base verificado el 11/09 (`docs/INFORME-AVANCE-ACTUALIZADO-11-09.md`, ya con sus 3 correcciones aplicadas tras verificación directa contra el código y la base de datos), (2) los entregables oficiales y el baremo de la cátedra (`docs/CONTEXTO-ACADEMICO.md`), y (3) patrones de organización adoptados de un proyecto de referencia distinto (chatbot/sistema de tickets), reestructurados para el dominio real de SIMDES. No se inventó ninguna cifra ni resultado: donde falta un dato verificado, se declara explícitamente como pendiente en vez de estimarlo. Los diagramas de esta versión se expresan en Mermaid (bloques de código que GitHub renderiza de forma nativa); si la entrega final requiere imágenes estáticas para un documento no-Markdown, deben exportarse aparte — ver nota en la sección 11.
+> **Nota sobre esta versión.** Este documento es la versión final consolidada del informe, redactada en Markdown a partir de: (1) el contenido base verificado el 11/09 (`docs/INFORME-AVANCE-ACTUALIZADO-11-09.md`, ya con sus 3 correcciones aplicadas tras verificación directa contra el código y la base de datos), (2) los entregables oficiales y el baremo de la cátedra (`docs/CONTEXTO-ACADEMICO.md`), y (3) patrones de organización adoptados de un proyecto de referencia distinto (chatbot/sistema de tickets), reestructurados para el dominio real de SIMDES. No se inventó ninguna cifra ni resultado: donde falta un dato verificado, se declara explícitamente como pendiente en vez de estimarlo. Los diagramas de esta versión se expresan en Mermaid (bloques de código que GitHub renderiza de forma nativa); 4 de los 5 ya tienen además su imagen estática exportada en `docs/diagramas/` (13/09) por si la entrega final se abre en un documento no-Markdown — ver nota en la sección 11.
 
 ## Índice
 
@@ -537,6 +537,10 @@ flowchart LR
     UC5d --> UC5r
 ```
 
+![Diagrama de casos de uso de SIMDES](diagramas/casos-de-uso.png)
+
+*Imagen estática exportada el 13/09 (`docs/diagramas/casos-de-uso.png`) del mismo diagrama Mermaid de arriba — para que se vea igual en un visor que no renderice Mermaid (Word, PDF), no solo en GitHub.*
+
 ## 5.3 Descripción de Casos de Uso por Actor
 
 ### Actor: Administrador
@@ -751,6 +755,10 @@ flowchart TB
     SupaAuth --> PG
 ```
 
+![Diagrama de arquitectura general de SIMDES](diagramas/arquitectura.png)
+
+*Imagen estática exportada el 13/09 (`docs/diagramas/arquitectura.png`) del mismo diagrama Mermaid de arriba.*
+
 ## 8.3 Descripción de Componentes por Capa
 
 **Capa de Presentación.** Next.js 16 (App Router) + Tailwind CSS 4. Server Components para lectura pública y control de acceso a nivel de servidor (redirección a `/login` antes de renderizar una pantalla protegida); Client Components para formularios e interacción con el mapa (Leaflet). **Nota técnica de plataforma:** Next.js 16 renombró `middleware.ts` a `proxy.ts` (mismo comportamiento, distinto nombre de archivo y de función exportada) — detectado y aplicado correctamente al construir la sesión de autenticación, evitando un error de "breaking change" documentado por el propio framework.
@@ -903,6 +911,10 @@ erDiagram
     }
 ```
 
+![Diagrama entidad-relación de SIMDES](diagramas/entidad-relacion.png)
+
+*Imagen estática exportada el 13/09 (`docs/diagramas/entidad-relacion.png`) del mismo diagrama Mermaid de arriba — verificada columna por columna contra el esquema real y vivo de Supabase el 13/09, coincide exacto.*
+
 *Nota: `PERFILES.id` referencia `auth.users(id)` (esquema gestionado por Supabase Auth, no dibujado aquí como entidad propia). `USO_TOKENS_IA` no tiene una FK real hacia `CONTENEDORES` — se identifica por `workflow`, no por contenedor individual.*
 
 *Actualizado 2026-09-12: `CONTENEDORES.zona_tipo` (CHECK `via_publica`/`comercial`, sección 9.3.1) y `CONTENEDORES.eliminado_en` (borrado lógico, sección 9.3.1.1) agregados hoy — no son entidades nuevas, extienden la tabla ya existente. `USO_TOKENS_IA` y `REPORTES` pasaron de `SELECT` público a restringido por rol (Hallazgo 3, sección 4.6-3); el diagrama de entidades no cambia por esto, solo su política de acceso (sección 9.4).*
@@ -1001,6 +1013,40 @@ Pendiente igual que antes, de que Johanna lo active manualmente: "Leaked Passwor
 7. **Rama falsa:** INSERT en `predicciones` únicamente.
 8. **Registrar Consumo Tokens** — registra los tokens consumidos en cada llamada a Gemini (criterio 10, ver sección 12).
 
+**Diagrama de secuencia del pipeline** (agregado 13/09, opcional — no es un literal exigido por la profesora, pero documenta con precisión el orden real de las 8 etapas de arriba, incluyendo la rama de error de la sección 10.4):
+
+```mermaid
+sequenceDiagram
+    participant S as Sensor / Simulador
+    participant N as n8n (Webhook)
+    participant DB as PostgreSQL
+    participant G as Gemini API
+    participant T as Telegram
+    participant L as log_automatizacion
+
+    S->>N: POST lectura (contenedor_id, nivel_pct, ubicación)
+    N->>DB: Guardar Lectura (INSERT en lecturas_sensor)
+    alt INSERT falla
+        N->>L: registrar error, terminar sin bloquear
+    else INSERT ok (RETURNING contenedor_id, nivel_pct)
+        N->>DB: Historial Lecturas (SELECT histórico reciente)
+        N->>N: Calcular Métricas (tasa de llenado + persistencia 20 min reales)
+        N->>G: Clasificar Riesgo (histórico + nivel actual)
+        G-->>N: nivel_riesgo, horas_estimadas, mensaje
+        N->>L: Registrar Consumo Tokens
+        alt Nivel sostenido >= 85% durante 20 min reales
+            N->>DB: INSERT predicción + INSERT alerta
+            N->>T: Enviar alerta (ubicación GPS, cuadrilla asignada)
+        else No sostenido
+            N->>DB: INSERT predicción únicamente
+        end
+    end
+```
+
+![Diagrama de secuencia del pipeline de n8n](diagramas/secuencia-pipeline.png)
+
+*Imagen estática exportada el 13/09 (`docs/diagramas/secuencia-pipeline.png`).*
+
 ## 10.4 Manejo de Errores
 
 Cualquier fallo en cualquier paso se registra en `log_automatizacion`, sin detener el flujo (criterio 7). Esta subsección documenta, con el mismo nivel de detalle técnico que el resto del informe, los **tres bugs reales** encontrados y corregidos el 11/09 — la evidencia más concreta de gestión de calidad que produjo el proyecto (ver también sección 4.6, que documenta un cuarto y quinto hallazgo en un frente distinto).
@@ -1048,7 +1094,7 @@ Cualquier fallo en cualquier paso se registra en `log_automatizacion`, sin deten
 
 **Pendiente, fuera del alcance de esta sesión:** captura de una alerta real recibida en el chat de Telegram del bot (requiere acceso al teléfono/cuenta de Telegram de Johanna) y captura de una corrida del simulador en terminal (cosmética — el resultado real ya está documentado en las secciones 4.6-3 y 10.4).
 
-**Nota sobre los diagramas de este informe:** los diagramas de las secciones 5.2, 7.3, 8.2 y 9.2 están en formato Mermaid (texto), que GitHub renderiza automáticamente al ver el archivo en el repositorio. **Si la versión final del informe se entrega en un formato que no renderiza Mermaid** (PDF, Word), estos bloques deben exportarse a imagen aparte antes de insertarlos.
+**Nota sobre los diagramas de este informe (actualizada 13/09):** los diagramas de las secciones 5.2, 7.3, 8.2, 9.2 y 10.3 están en formato Mermaid (texto), que GitHub renderiza automáticamente al ver el archivo en el repositorio. **4 de los 5 (casos de uso 5.2, arquitectura 8.2, entidad-relación 9.2, secuencia del pipeline 10.3) ya se exportaron también como imagen estática** (`docs/diagramas/*.png`, insertadas justo debajo de cada bloque Mermaid) — se ven igual en un visor que no renderice Mermaid (Word, PDF), no solo en GitHub. El diagrama de flujo de navegación (7.3) sigue solo en Mermaid, pendiente de exportar si hace falta.
 
 ## 11.3 Video Explicativo
 
@@ -1110,7 +1156,9 @@ El consumo medido de IA en producción (Gemini, 28 llamadas, 6.613 tokens) es mo
 
 # 13. Conclusiones y Próximos Pasos
 
-## 13.1 Estado de los 11 Literales del Informe (actualizado 2026-09-12)
+## 13.1 Estado de los 13 Literales del Informe (corregido 2026-09-13)
+
+**Corrección real (13/09):** esta tabla decía "11 Literales" y nunca tuvo una fila para "e. Diagramas de caso de uso" (contenido que sí existe, sección 5) — un descuido al agregar el punto "d. Gestión de calidad" el 11/09 corrió las letras siguientes sin actualizar esta tabla. La lista oficial completa de la profesora (`docs/CONTEXTO-ACADEMICO.md`) tiene 13 literales, a-m. Corregido para que cada fila use la letra oficial real.
 
 | Literal | Contenido | Estado |
 | --- | --- | --- |
@@ -1118,14 +1166,15 @@ El consumo medido de IA en producción (Gemini, 28 llamadas, 6.613 tokens) es mo
 | b. RF/RNF | Sección 2 | ✅ Completo, con matriz de trazabilidad |
 | c. Historias de usuario | Sección 3 | ✅ Completo, 4 actores + Sistema |
 | d. Gestión de calidad | Sección 4 | ✅ Completo — 4 hallazgos reales documentados (4.6-1/2/3/4, el último sobre gobernanza de agentes de IA) + factores de calidad de Pressman/McCall (4.8, agregado el 13/09) |
-| e. Uso de IA | Sección 6 | ⚠️ Completo para Gemini; faltan cifras exactas de tokens de Claude Code (esta sesión) — no medibles con las herramientas disponibles aquí |
-| f. Prototipo UI/UX | Sección 7 | ✅ Completo y actualizado el 12/09 — 9 pantallas reales, toda la app en la misma paleta oscura |
-| g. Arquitectura general | Sección 8 | ✅ Completo — incluye patrones de diseño y buenas prácticas con evidencia de código (8.6, agregado el 13/09) |
-| h. Arquitectura de BD | Sección 9 | ✅ Completo, actualizado el 12/09 (zona_tipo, eliminado_en, RLS revisado dos veces) y re-verificado el 13/09 sin hallazgos nuevos (9.6) |
-| i. Arquitectura de automatizaciones | Sección 10 | ✅ Completo, validado end-to-end el 12/09 (20 lecturas, 14 predicciones, 6 alertas, 0 errores) |
-| j. Repositorio + README | Sección 11.1 | ✅ README reescrito el 12/09 con el estado real |
-| k. Capturas de pantalla | Sección 11.2 | ✅ 10 capturas reales en `docs/capturas/`, con sesión autenticada |
-| l. Video (Drive) | Sección 11.3 | ❌ **Pendiente — acción de Johanna, fuera del alcance de esta sesión de IA.** Guion ya propuesto. |
+| e. Diagramas de caso de uso | Sección 5 | ✅ Completo — actores (5.1), diagrama principal (5.2), descripción por actor (5.3), refleja el modelo de 4 roles + Sistema + Público |
+| f. Uso de IA | Sección 6 | ⚠️ Completo para Gemini; faltan cifras exactas de tokens de Claude Code (esta sesión) — no medibles con las herramientas disponibles aquí |
+| g. Prototipo UI/UX | Sección 7 | ✅ Completo y actualizado el 12/09 — 9 pantallas reales, toda la app en la misma paleta oscura |
+| h. Arquitectura general | Sección 8 | ✅ Completo — incluye patrones de diseño y buenas prácticas con evidencia de código (8.6, agregado el 13/09) |
+| i. Arquitectura de BD | Sección 9 | ✅ Completo, actualizado el 12/09 (zona_tipo, eliminado_en, RLS revisado dos veces) y re-verificado el 13/09 sin hallazgos nuevos (9.6) |
+| j. Arquitectura de automatizaciones | Sección 10 | ✅ Completo, validado end-to-end el 12/09 (20 lecturas, 14 predicciones, 6 alertas, 0 errores) + diagrama de secuencia del pipeline agregado el 13/09 |
+| k. Repositorio + README | Sección 11.1 | ✅ README reescrito el 12/09 con el estado real |
+| l. Capturas de pantalla | Sección 11.2 | ✅ 10 capturas reales en `docs/capturas/`, con sesión autenticada |
+| m. Video (Drive) | Sección 11.3 | ❌ **Pendiente — acción de Johanna, fuera del alcance de esta sesión de IA.** Guion ya propuesto. |
 
 ## 13.2 Cumplimiento del Baremo de 10 Criterios (revisión 2026-09-12)
 
@@ -1148,6 +1197,6 @@ El consumo medido de IA en producción (Gemini, 28 llamadas, 6.613 tokens) es mo
 
 1. **Grabar el video y subirlo a Drive** (acción de Johanna, no delegable).
 2. Decidir si vale la pena medir/declarar el consumo de tokens de Claude Code (criterios 6 y 10) — requiere que Johanna consulte su panel de uso de Anthropic.
-3. Repaso final de todo el informe antes de exportar a PDF/Word si la entrega lo exige (los diagramas Mermaid deben convertirse a imagen si el formato final no los renderiza, sección 11.2).
+3. Repaso final de todo el informe antes de exportar a PDF/Word si la entrega lo exige. 4 de los 5 diagramas (casos de uso, arquitectura, entidad-relación, secuencia del pipeline) ya tienen imagen estática (`docs/diagramas/`, 13/09) — solo falta exportar el de flujo de navegación (7.3) si el formato final no renderiza Mermaid (sección 11.2).
 
 Todo lo demás —backlog, arquitectura, modelo de roles, matriz de trazabilidad, CRUD completo, seguridad auditada dos veces, pulido visual de las 9 pantallas, y el manual de defensa oral— ya está construido y verificado con datos reales, no solo declarado.
