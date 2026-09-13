@@ -42,3 +42,10 @@ next-env.d.ts
 
 # claude code (personal overrides, not shared config)
 .claude/settings.local.json
+
+# documentación de trabajo interno (13/09) — bitácora, informe, manual de
+# defensa, capturas y diagramas son notas/entregables de uso personal de
+# Johanna, no contenido para el repositorio público. El informe oficial se
+# entrega aparte, como documento Word/APA. El repo público queda para el
+# código y el README.
+/docs/

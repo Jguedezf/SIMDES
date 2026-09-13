@@ -107,14 +107,9 @@ src/
 
 scripts/
 └── simular-contenedores.js  # Simulador manual de lecturas de sensor
-
-docs/
-├── BITACORA-LOCAL.md            # Bitácora técnica sesión a sesión
-├── CONTEXTO-ACADEMICO.md        # Enunciado, baremo y entregables de la cátedra
-├── INFORME-FINAL.md             # Informe de avance del proyecto
-├── MANUAL-DEFENSA-ORAL.md       # Guía para la sustentación oral (flujos, modelo de negocio, roles)
-└── capturas/                    # Capturas de pantalla reales de la aplicación
 ```
+
+> La documentación del proyecto (informe, bitácora técnica, capturas, diagramas) se entrega por separado como documento oficial — no vive en este repositorio.
 
 ---
 
@@ -144,7 +139,7 @@ Este repositorio sigue un flujo de dos ramas:
 - [x] Primer usuario administrador real vinculado a `perfiles`
 - [x] Verificación visual completa en navegador (con sesión real, no solo capturas)
 - [x] Despliegue en Vercel (producción activa)
-- [x] Capturas de pantalla reales (`docs/capturas/`)
+- [x] Capturas de pantalla reales de las 9 pantallas (entregadas junto al informe)
 - [ ] Video explicativo (pendiente de grabar)
 
 ---
@@ -158,6 +153,6 @@ Ingeniería de Software I — UNEG
 
 <div align="center">
 
-📄 El informe de avance completo está en [`docs/INFORME-FINAL.md`](docs/INFORME-FINAL.md) — incluye diagramas de arquitectura, casos de uso y entidad-relación en Mermaid, renderizados automáticamente por GitHub.
+📄 El informe completo del proyecto (requisitos, arquitectura, diagramas, evidencia funcional) se entrega como documento oficial aparte de este repositorio.
 
 </div>
