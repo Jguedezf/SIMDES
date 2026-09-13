@@ -4,9 +4,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { crearClienteNavegador } from '@/lib/supabase-navegador'
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts'
 import { ZONA_ETIQUETA, type ZonaTipo } from '@/lib/codigo-contenedor'
+import { NIVEL_UMBRAL_ALTO } from '@/lib/nivel'
 import ModalConfirmacion from '@/components/modal-confirmacion'
 import Toast, { type ToastTipo } from '@/components/toast'
 
@@ -260,14 +261,30 @@ export default function DetalleContenedorCliente({
         <div className="tarjeta-vidrio p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-4">Historial de llenado</h2>
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={lecturas.map(l => ({
-              hora: new Date(l.timestamp).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }),
-              nivel: l.nivel_pct,
-            }))}>
+            <LineChart data={lecturas.map(l => {
+              const fecha = new Date(l.timestamp)
+              const abarcaVariosDias = lecturas.length > 1
+                && new Date(lecturas[0].timestamp).toDateString() !== new Date(lecturas[lecturas.length - 1].timestamp).toDateString()
+              return {
+                // Con lecturas de más de un día, mostrar solo la hora hace que
+                // el eje se vea "desordenado" (ej. 12:57 antes que 01:20 de
+                // otro día) aunque los datos sí estén ordenados por fecha real.
+                hora: abarcaVariosDias
+                  ? fecha.toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                  : fecha.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }),
+                nivel: l.nivel_pct,
+              }
+            })}>
               <CartesianGrid strokeDasharray="3 3" stroke="#2A2A45" />
               <XAxis dataKey="hora" fontSize={12} stroke="#9098B5" />
               <YAxis domain={[0, 100]} fontSize={12} stroke="#9098B5" />
               <Tooltip contentStyle={{ background: '#1A1A2E', border: '1px solid #2A2A45', borderRadius: 8, color: '#F5F5F7' }} />
+              <ReferenceLine
+                y={NIVEL_UMBRAL_ALTO}
+                stroke="#d03b3b"
+                strokeDasharray="4 4"
+                label={{ value: `Umbral crítico (${NIVEL_UMBRAL_ALTO}%)`, position: 'insideTopRight', fill: '#d03b3b', fontSize: 11 }}
+              />
               <Line type="monotone" dataKey="nivel" stroke="#00D4AA" strokeWidth={2} dot={{ r: 3, fill: '#00D4AA' }} />
             </LineChart>
           </ResponsiveContainer>

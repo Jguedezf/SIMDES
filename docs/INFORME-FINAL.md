@@ -441,6 +441,38 @@ Corrección con dos partes coordinadas, porque una sola no bastaba: (1) la polí
 3. **La API de IA podría responder en un formato inesperado y romper el flujo n8n.** Mitigación: el nodo de decisión valida el esquema JSON de la respuesta antes de usarla; si falla, se registra como error controlado sin detener el flujo.
 4. **El plan gratuito de n8n Cloud es un trial de 14 días, y una entrega retrasada podría dejarlo vencido.** Mitigación: el flujo de automatización se exporta periódicamente como archivo `.json` (control de configuración); alternativamente, n8n puede autoalojarse de forma gratuita y sin límite de tiempo.
 
+## 4.8 Factores de Calidad del Software (Pressman / McCall)
+
+Las secciones 4.1 a 4.7 ya documentan el *proceso* de aseguramiento de calidad (SQA, IEEE 730, PHVA). Esta sección lo complementa con el *modelo de factores de calidad del producto* de Pressman (basado en McCall), exigido explícitamente en la evaluación — cada factor se contrasta contra evidencia real ya producida en el proyecto, no contra una declaración de intención.
+
+**Operación del producto:**
+
+| Factor | Evidencia real en SIMDES |
+| --- | --- |
+| **Corrección** (hace lo que se especificó) | Filtro de persistencia de 20 min verificado con una racha real de 11.8 min que correctamente no disparó alerta (sección 10.4); cada cifra de `/reportes` se contrastó contra SQL directo en los 3 rangos antes de darla por buena (sección 12) |
+| **Fiabilidad** (funciona sin fallos bajo condiciones definidas) | Pipeline de n8n corrido de punta a punta 2 veces con datos reales (11/09 y 13/09, tras el cambio de esquema zona/código) — 20 lecturas, 14 predicciones, 6 alertas, 0 errores en `log_automatizacion` en la corrida más reciente |
+| **Eficiencia** (uso de recursos) | `/contenedor/[id]` convertido de 3 fetches secuenciales a `Promise.all` (~0.4s total, sección 8); vista `ultima_lectura_por_contenedor` con `DISTINCT ON` en servidor para evitar traer la tabla completa de lecturas al dashboard |
+| **Integridad** (control de acceso a datos/funciones no autorizadas) | RLS por rol en las 9 tablas, auditada dos veces con la `anon key` real (no solo con acceso administrativo) — encontró y corrigió 2 brechas reales de lectura pública indebida (Hallazgos 2b y 3, sección 4.6) |
+| **Usabilidad** (facilidad de aprendizaje y uso) | Diseño de marca consistente en las 9 pantallas (`.tarjeta-vidrio`, `.boton-pill`), estados vacíos explícitos en vez de pantallas en blanco ("Sin lecturas todavía"), confirmación modal antes de acciones destructivas (eliminar contenedor, resolver alerta) |
+
+**Revisión del producto:**
+
+| Factor | Evidencia real en SIMDES |
+| --- | --- |
+| **Mantenibilidad** (facilidad de localizar y corregir defectos) | Separación consistente Server/Client Component (sección 8.6) aísla el efecto de un cambio; nomenclatura en español coherente en todo el dominio; 3 defectos reales de n8n (sección 4.6-1) se localizaron y corrigieron sin tocar código no relacionado |
+| **Flexibilidad** (facilidad de modificar) | `zona_tipo` se agregó como columna aditiva (no una migración destructiva) cuando cambió el modelo de zonas; los presets de rango de fechas (`hoy/semana/mes/custom`) se calculan en una sola función (`calcularRango`) reutilizada por pantalla, PDF y Excel — cambiar la lógica de un preset no requiere tocar los 3 consumidores |
+| **Testabilidad** (facilidad de probar) | `scripts/simular-contenedores.js` permite probar el pipeline completo de n8n con datos reales sin depender de hardware físico; validaciones de formulario probadas con valores inválidos explícitos (`?tipo=DROP TABLE`, sección 4.5) |
+
+**Transición del producto:**
+
+| Factor | Evidencia real en SIMDES |
+| --- | --- |
+| **Portabilidad** | Next.js + Supabase + Vercel son plataformas multi-nube estándar, sin dependencia de infraestructura propietaria no portable; el flujo de n8n se exporta como `.json` versionable (riesgo 4 de la sección 4.7) |
+| **Reusabilidad** | Componentes controlados reutilizados sin duplicar marcado (`ModalConfirmacion`, `Toast`, `.tarjeta-vidrio`, `.boton-pill` — ver sección 8.6); `cargarLogoBase64()` y `calcularRango()` se reutilizan entre pantalla, PDF y Excel |
+| **Interoperabilidad** | Gemini y Telegram se integran vía HTTP/JSON estándar dentro de n8n; Supabase expone REST/PostgREST estándar, consumible desde cualquier cliente HTTP (así se verificaron las políticas RLS, con `curl` y la `anon key`, no solo desde la app) |
+
+**Honestidad sobre huecos:** el factor con menor evidencia es **Testabilidad** en el sentido estricto de pruebas unitarias automatizadas — no existe una suite con cobertura medida (ver DoD, sección 3.1, decisión de alcance pendiente por tiempo). La verificación real del proyecto es funcional/end-to-end (simulador + Playwright + SQL directo), no unitaria — un método de prueba válido y ya evidenciado en todo el informe, pero distinto del que pide la Definition of Done original.
+
 ---
 
 # 5. Diagramas de Caso de Uso
@@ -737,6 +769,27 @@ flowchart TB
 
 **Patrón de arquitectura:** capas (Presentación en Next.js + Tailwind, Lógica de Negocio y Orquestación en Supabase + n8n, Persistencia en PostgreSQL). El disparador real del flujo de automatización es un **Webhook HTTP invocado explícitamente** (por el simulador o por el botón "Simular lectura" de la app), no el Database Webhook de Supabase originalmente propuesto — decisión de ingeniería consciente que simplificó la implementación sin perder el desacoplamiento: n8n reacciona a cada lectura de forma asíncrona, y un fallo puntual del nodo de IA o de Telegram no bloquea ni pierde el registro de la lectura original, ya persistida antes de que el flujo continúe.
 
+## 8.6 Patrones de Diseño y Buenas Prácticas de Programación Aplicadas
+
+Más allá del patrón arquitectónico de capas (sección 8.5), a nivel de código se aplican de forma consistente los siguientes patrones de diseño — cada uno con evidencia real en el repositorio, no como una lista de nombres aspiracional:
+
+| Patrón | Dónde se aplica | Problema que resuelve |
+| --- | --- | --- |
+| **Contenedor/Presentación** (variante de MVC para React Server Components) | `contenedor/[id]/page.tsx` (Server, obtiene datos) + `detalle-cliente.tsx` (Client, interactividad); `reportes/page.tsx` + `exportar-reportes.tsx`/`selector-rango.tsx`; `contenedores/nuevo/page.tsx` + `formulario.tsx` | Separa la obtención de datos (que puede correr en el servidor, sin JS en el navegador) de la interactividad (que necesita estado y eventos del navegador) — reduce el JS enviado al cliente y permite proteger rutas a nivel de servidor antes de renderizar |
+| **Factory Method** | `crearClienteServidor()` (`src/lib/supabase-servidor.ts`) y su equivalente de navegador (`src/lib/supabase-navegador.ts`) | Encapsulan la construcción de un cliente Supabase correctamente configurado según el contexto de ejecución (cookies de servidor vs. sesión de navegador) — el código que los consume no conoce ese detalle |
+| **Guard Clause / Route Guard** | `exigirRol(...rolesPermitidos)` (`src/lib/auth.ts`), invocado al inicio de cada Server Component protegido | Centraliza la verificación de sesión + rol en una sola función reutilizable en vez de repetir la lógica de redirección en cada página protegida |
+| **Adapter/Wrapper de plataforma** | `mapa-contenedores-wrapper.tsx`, `mapa-selector-punto-wrapper.tsx` | Next.js 16 exige que `next/dynamic(..., { ssr:false })` se use solo dentro de un Client Component; estos wrappers adaptan un componente con dependencia exclusiva del navegador (Leaflet, requiere `window`) a esa restricción sin filtrarla al resto de la pantalla |
+| **Componente Controlado (Controlled Component)** | `ModalConfirmacion` y `Toast` (`src/components/`) | No gestionan su propio estado de visibilidad — lo reciben por props del componente padre —, lo que permite reutilizarlos sin duplicar marcado en eliminar contenedor, resolver alerta, cambiar contraseña y exportar reportes |
+| **Pipes and Filters con manejo de error no bloqueante** | Pipeline de n8n (sección 10.3-10.4): persistir → calcular métricas → clasificar con IA → despachar alerta | Cada etapa persiste su resultado antes de continuar; el fallo de una etapa (ej. la API de IA) se registra en `log_automatizacion` sin perder ni bloquear el registro ya persistido de la lectura original |
+| **Principio de Mínimo Privilegio como patrón de encapsulamiento** | Función `SECURITY DEFINER actualizar_mi_nombre(nuevo_nombre)` en vez de una política RLS de `UPDATE` genérica sobre `perfiles` | Expone una única operación de escritura, acotada por parámetro y por `auth.uid()` interno — un usuario no puede reescribir su propio `rol` ni `cuadrilla_id` porque esos campos ni siquiera son parámetros de la función |
+
+**Buenas prácticas de programación aplicadas (más allá del nombre "SOLID" del DoD, con ejemplos concretos):**
+
+- **Responsabilidad única (SRP):** `rango-fechas.ts` solo calcula rangos de fecha, sin saber de UI ni de formato de exportación; `auth.ts` solo resuelve identidad/rol, sin lógica de negocio de dominio.
+- **No te repitas (DRY):** las clases CSS `.tarjeta-vidrio`/`.boton-pill`/`.popover-solido` reemplazaron un patrón de utilidades Tailwind repetido en 21 tarjetas de 9 pantallas; `calcularRango()` y `cargarLogoBase64()` se reutilizan entre pantalla, PDF y Excel en vez de reimplementarse tres veces.
+- **Seguro por defecto (fail-safe defaults):** RLS deniega por defecto salvo policy explícita; los `REVOKE EXECUTE` explícitos sobre funciones `SECURITY DEFINER` no asumen que `REVOKE ALL FROM PUBLIC` alcanza los grants directos a `anon` (gotcha real documentado en la bitácora del 12/09).
+- **Nomenclatura consistente:** todo el dominio (funciones, variables, tablas, columnas) en español, sin mezclar con inglés a mitad de proyecto — decisión deliberada para que el código se lea igual que el informe y las Historias de Usuario.
+
 ---
 
 # 9. Arquitectura de la Base de Datos
@@ -899,6 +952,12 @@ Control de escritura implementado con **Supabase Auth + RLS por rol** (no `servi
 2. **Tipo de dato geoespacial (PostGIS).** Columna generada `geog geography(Point, 4326)` con índice GiST, verificado con una consulta de distancia real entre contenedores.
 3. **Volumen de series de tiempo: dimensionado al piloto, no sobre-diseñado.** `lecturas_sensor` no justifica partición ni TimescaleDB en esta fase — documentado como punto de escalamiento futuro.
 
+## 9.6 Segunda re-verificación de advisories (2026-09-13)
+
+Se volvió a correr el linter de seguridad/performance de Supabase (no solo se confirmó de memoria el estado del 12/09). **Ningún hallazgo nuevo:** los mismos ya triados siguen presentes y siguen aceptados con la misma justificación (`spatial_ref_sys` sin RLS por ser tabla de sistema de PostGIS, extensión `postgis` en `public`, `st_estimatedextent` ejecutable por `anon`/`authenticated` por ser built-in de la extensión, 4 índices "no usados" — esperado con el volumen de datos de un piloto). Un hallazgo adicional revisado por primera vez explícitamente: `log_automatizacion` tiene RLS habilitado **sin ninguna policy** — esto es, por diseño de PostgreSQL, el estado más restrictivo posible (deniega todo acceso vía PostgREST a `anon`/`authenticated`); n8n escribe en esa tabla con la `service_role key`, que ignora RLS, así que ningún cliente de la aplicación necesita ni debería poder leerla directo. No es una policy faltante por descuido, es la postura correcta para una tabla de solo-diagnóstico interno.
+
+Pendiente igual que antes, de que Johanna lo active manualmente: "Leaked Password Protection" en Supabase Auth (Dashboard → Authentication → Policies, 2 minutos, cero riesgo).
+
 ---
 
 # 10. Arquitectura de Automatizaciones (n8n)
@@ -1042,11 +1101,11 @@ El consumo medido de IA en producción (Gemini, 28 llamadas, 6.613 tokens) es mo
 | a. Elicitación | Sección 1 | ✅ Completo |
 | b. RF/RNF | Sección 2 | ✅ Completo, con matriz de trazabilidad |
 | c. Historias de usuario | Sección 3 | ✅ Completo, 4 actores + Sistema |
-| d. Gestión de calidad | Sección 4 | ✅ Completo — 3 hallazgos reales documentados (4.6-1/2/3), el último del 12/09 |
+| d. Gestión de calidad | Sección 4 | ✅ Completo — 3 hallazgos reales documentados (4.6-1/2/3) + factores de calidad de Pressman/McCall (4.8, agregado el 13/09) |
 | e. Uso de IA | Sección 6 | ⚠️ Completo para Gemini; faltan cifras exactas de tokens de Claude Code (esta sesión) — no medibles con las herramientas disponibles aquí |
 | f. Prototipo UI/UX | Sección 7 | ✅ Completo y actualizado el 12/09 — 9 pantallas reales, toda la app en la misma paleta oscura |
-| g. Arquitectura general | Sección 8 | ✅ Completo |
-| h. Arquitectura de BD | Sección 9 | ✅ Completo, actualizado el 12/09 (zona_tipo, eliminado_en, RLS revisado dos veces) |
+| g. Arquitectura general | Sección 8 | ✅ Completo — incluye patrones de diseño y buenas prácticas con evidencia de código (8.6, agregado el 13/09) |
+| h. Arquitectura de BD | Sección 9 | ✅ Completo, actualizado el 12/09 (zona_tipo, eliminado_en, RLS revisado dos veces) y re-verificado el 13/09 sin hallazgos nuevos (9.6) |
 | i. Arquitectura de automatizaciones | Sección 10 | ✅ Completo, validado end-to-end el 12/09 (20 lecturas, 14 predicciones, 6 alertas, 0 errores) |
 | j. Repositorio + README | Sección 11.1 | ✅ README reescrito el 12/09 con el estado real |
 | k. Capturas de pantalla | Sección 11.2 | ✅ 10 capturas reales en `docs/capturas/`, con sesión autenticada |

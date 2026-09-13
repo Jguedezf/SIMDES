@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 // grafico-alertas.tsx (crítico/advertencia/bien) — no la de marca, que falló
 // el chequeo de luminosidad para uso en gráfica sobre fondo oscuro.
 const COLOR_ESTADO = { pendiente: '#d03b3b', enviada: '#fab219', resuelta: '#0ca30c' }
+const ETIQUETA_ESTADO = { pendiente: 'Pendientes', enviada: 'Enviadas', resuelta: 'Resueltas' } as const
 
 export type PuntoHistorial = { fecha: string; pendiente: number; enviada: number; resuelta: number }
 
@@ -39,7 +40,18 @@ export default function GraficoHistorial({ datos }: { datos: PuntoHistorial[] })
           <Bar dataKey="resuelta" name="Resueltas" stackId="estado" fill={COLOR_ESTADO.resuelta} radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
-      {sinDatos && <p className="text-brand-muted text-sm text-center -mt-4">Sin alertas en este período.</p>}
+      {sinDatos ? (
+        <p className="text-brand-muted text-sm text-center -mt-4">Sin alertas en este período.</p>
+      ) : (
+        <div className="flex items-center justify-center gap-4 -mt-2">
+          {(Object.keys(ETIQUETA_ESTADO) as (keyof typeof ETIQUETA_ESTADO)[]).map((clave) => (
+            <div key={clave} className="flex items-center gap-1.5 text-xs">
+              <span className="h-2 w-2 rounded-full shrink-0" style={{ background: COLOR_ESTADO[clave] }} aria-hidden />
+              <span className="text-brand-muted">{ETIQUETA_ESTADO[clave]}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
