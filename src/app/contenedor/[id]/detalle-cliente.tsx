@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { crearClienteNavegador } from '@/lib/supabase-navegador'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
@@ -18,6 +19,8 @@ export type Contenedor = {
   estado: string
   zona_tipo: ZonaTipo
   eliminado_en: string | null
+  numero_punto: number
+  nombre_ubicacion: string | null
 }
 
 export type Lectura = { nivel_pct: number; timestamp: string }
@@ -182,6 +185,13 @@ export default function DetalleContenedorCliente({
             <p className="text-brand-muted capitalize">
               {TIPO_ETIQUETA[contenedor.tipo_residuo as TipoResiduo] ?? contenedor.tipo_residuo} · {contenedor.capacidad_litros} L · {ZONA_ETIQUETA[contenedor.zona_tipo]}
             </p>
+            <Link
+              href={`/contenedores?punto=${String(contenedor.numero_punto).padStart(3, '0')}`}
+              className="text-sm text-brand-emerald hover:underline"
+            >
+              Ver los demás contenedores de esta isla (PL-{String(contenedor.numero_punto).padStart(3, '0')}
+              {contenedor.nombre_ubicacion ? ` — ${contenedor.nombre_ubicacion}` : ''}) →
+            </Link>
           </div>
           <button
             onClick={simularLectura}

@@ -51,6 +51,9 @@ export default async function Navbar() {
             {(perfil?.rol === 'administrador' || perfil?.rol === 'directiva') && (
               <Link href="/reportes" className={navLinkClase}>Reportes</Link>
             )}
+            {perfil?.rol === 'administrador' && (
+              <Link href="/incidencias" className={navLinkClase}>Incidencias</Link>
+            )}
             {perfil && (
               <>
                 <Link href="/alertas" className={navLinkClase}>Alertas</Link>

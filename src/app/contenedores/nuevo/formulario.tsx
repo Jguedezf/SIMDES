@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { crearClienteNavegador } from '@/lib/supabase-navegador'
 import MapaSelectorPuntoWrapper from '@/components/mapa-selector-punto-wrapper'
-import { generarCodigo, siguienteNumeroPunto, ZONA_ETIQUETA, type TipoResiduo, type ZonaTipo } from '@/lib/codigo-contenedor'
+import { generarCodigo, ZONA_ETIQUETA, type TipoResiduo, type ZonaTipo } from '@/lib/codigo-contenedor'
 import { TAMANOS_VALIDOS, tamanoPorDefecto } from '@/lib/tamanos-contenedor'
+import { obtenerDireccion } from '@/lib/geocodificar'
 
 const TIPOS_RESIDUO: { valor: TipoResiduo; etiqueta: string }[] = [
   { valor: 'plastico', etiqueta: 'Plástico' },
@@ -18,10 +19,11 @@ const ZONAS: ZonaTipo[] = ['via_publica', 'comercial']
 
 export default function FormularioNuevoContenedor() {
   const router = useRouter()
-  const [numeroPunto, setNumeroPunto] = useState<number | null>(null)
   const [zona, setZona] = useState<ZonaTipo>('via_publica')
   const [latitud, setLatitud] = useState<number | null>(null)
   const [longitud, setLongitud] = useState<number | null>(null)
+  const [nombreUbicacion, setNombreUbicacion] = useState('')
+  const [geocodificando, setGeocodificando] = useState(false)
   const [tiposSeleccionados, setTiposSeleccionados] = useState<Set<TipoResiduo>>(
     new Set(TIPOS_RESIDUO.map((t) => t.valor))
   )
@@ -46,15 +48,19 @@ export default function FormularioNuevoContenedor() {
     setTamanos(tamanosPorDefectoDeZona(zona))
   }
 
-  useEffect(() => {
-    const supabase = crearClienteNavegador()
-    supabase
-      .from('contenedores')
-      .select('codigo')
-      .then(({ data }) => {
-        setNumeroPunto(siguienteNumeroPunto((data ?? []).map((c) => c.codigo)))
-      })
-  }, [])
+  // Geocodificación inversa al marcar el punto — mismo servicio (Nominatim)
+  // que ya se usa al arrastrar un punto existente en el dashboard. Es una
+  // sugerencia editable, no una fuente de verdad: Nominatim puede resolver
+  // el mismo nombre de calle para dos puntos cercanos (verificado con datos
+  // reales del piloto), así que el administrador puede corregirlo a mano.
+  async function seleccionarPunto(lat: number, lng: number) {
+    setLatitud(lat)
+    setLongitud(lng)
+    setGeocodificando(true)
+    const direccion = await obtenerDireccion(lat, lng)
+    setNombreUbicacion(direccion ?? '')
+    setGeocodificando(false)
+  }
 
   function alternarTipo(tipo: TipoResiduo) {
     setTiposSeleccionados((actual) => {
@@ -65,15 +71,29 @@ export default function FormularioNuevoContenedor() {
     })
   }
 
-  const puedeGuardar =
-    numeroPunto !== null && tiposSeleccionados.size > 0 && latitud !== null && longitud !== null
+  const puedeGuardar = tiposSeleccionados.size > 0 && latitud !== null && longitud !== null
 
   async function guardar(e: React.FormEvent) {
     e.preventDefault()
-    if (!puedeGuardar || numeroPunto === null) return
+    if (!puedeGuardar) return
 
     setGuardando(true)
     setMensaje('')
+
+    const supabase = crearClienteNavegador()
+
+    // El número de isla se reserva en el servidor (secuencia atómica, RPC
+    // `siguiente_numero_punto`) justo antes de insertar, no se calcula en el
+    // cliente — evita que dos altas simultáneas terminen creando 2 islas con
+    // el mismo número (condición de carrera real con el esquema anterior de
+    // "leer el máximo y sumar 1").
+    const { data: numeroPunto, error: errorNumero } = await supabase.rpc('siguiente_numero_punto')
+
+    if (errorNumero || numeroPunto === null) {
+      setMensaje(`No se pudo reservar el número de isla: ${errorNumero?.message ?? 'respuesta vacía'}`)
+      setGuardando(false)
+      return
+    }
 
     const filas = Array.from(tiposSeleccionados).map((tipo) => ({
       codigo: generarCodigo(numeroPunto, zona, tipo),
@@ -82,9 +102,10 @@ export default function FormularioNuevoContenedor() {
       capacidad_litros: tamanos[tipo],
       latitud,
       longitud,
+      numero_punto: numeroPunto,
+      nombre_ubicacion: nombreUbicacion.trim() || null,
     }))
 
-    const supabase = crearClienteNavegador()
     const { error } = await supabase.from('contenedores').insert(filas)
 
     if (error) {
@@ -114,15 +135,27 @@ export default function FormularioNuevoContenedor() {
             <MapaSelectorPuntoWrapper
               latitud={latitud}
               longitud={longitud}
-              onSeleccionar={(lat, lng) => {
-                setLatitud(lat)
-                setLongitud(lng)
-              }}
+              onSeleccionar={seleccionarPunto}
             />
             <p className="text-xs text-brand-muted mt-2">
               {latitud !== null && longitud !== null
                 ? `Punto marcado: ${latitud}, ${longitud}`
                 : 'Todavía no has marcado un punto.'}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-foreground mb-2">Nombre de la ubicación</label>
+            <input
+              type="text"
+              value={nombreUbicacion}
+              onChange={(e) => setNombreUbicacion(e.target.value)}
+              maxLength={120}
+              placeholder={geocodificando ? 'Resolviendo dirección...' : 'Ej. Calle Zaragoza, frente a la plaza'}
+              className="w-full border border-brand-border bg-brand-bg rounded-lg px-3 py-2 text-sm text-foreground"
+            />
+            <p className="text-xs text-brand-muted mt-1">
+              Se sugiere sola al marcar el punto en el mapa — puedes corregirla si Nominatim no acertó.
             </p>
           </div>
 
@@ -150,9 +183,11 @@ export default function FormularioNuevoContenedor() {
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">Código del punto</label>
             <p className="text-sm text-brand-muted font-mono">
-              {numeroPunto !== null ? `PL-${String(numeroPunto).padStart(3, '0')}-${zona === 'via_publica' ? 'R' : 'C'}-…` : 'Calculando…'}
+              PL-···-{zona === 'via_publica' ? 'R' : 'C'}-…
             </p>
-            <p className="text-xs text-brand-muted mt-1">Se genera automáticamente, no es editable.</p>
+            <p className="text-xs text-brand-muted mt-1">
+              El número de isla se asigna al guardar (secuencia del servidor), no es editable.
+            </p>
           </div>
 
           <div>
@@ -176,11 +211,6 @@ export default function FormularioNuevoContenedor() {
                     />
                     <label htmlFor={`tipo-${t.valor}`} className="text-sm font-medium text-foreground flex-1">
                       {t.etiqueta}
-                      {numeroPunto !== null && (
-                        <span className="block text-xs text-brand-muted font-mono">
-                          {generarCodigo(numeroPunto, zona, t.valor)}
-                        </span>
-                      )}
                     </label>
                     <select
                       value={tamanos[t.valor]}
@@ -204,9 +234,7 @@ export default function FormularioNuevoContenedor() {
             <p className="text-xs text-brand-muted">
               {latitud === null || longitud === null
                 ? 'Falta marcar la ubicación en el mapa.'
-                : tiposSeleccionados.size === 0
-                  ? 'Marca al menos un tipo de residuo.'
-                  : 'Calculando el número de punto…'}
+                : 'Marca al menos un tipo de residuo.'}
             </p>
           )}
 

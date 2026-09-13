@@ -41,19 +41,6 @@ export const TIPO_ETIQUETA: Record<TipoResiduo, string> = {
   organico: 'Orgánico',
 }
 
-const PATRON_CODIGO = /^PL-(\d{3})-[RC]-[YAVM]$/
-
 export function generarCodigo(numeroPunto: number, zona: ZonaTipo, tipo: TipoResiduo) {
   return `PL-${String(numeroPunto).padStart(3, '0')}-${ZONA_LETRA[zona]}-${TIPO_LETRA[tipo]}`
-}
-
-// Calcula el siguiente número de punto disponible a partir de los códigos
-// ya existentes (formato PL-00N-Z-T). Si ninguno matchea, empieza en 1.
-export function siguienteNumeroPunto(codigosExistentes: string[]): number {
-  const numeros = codigosExistentes
-    .map((c) => c.match(PATRON_CODIGO)?.[1])
-    .filter((n): n is string => Boolean(n))
-    .map(Number)
-
-  return numeros.length ? Math.max(...numeros) + 1 : 1
 }

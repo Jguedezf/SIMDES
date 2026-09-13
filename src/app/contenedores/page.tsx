@@ -14,17 +14,24 @@ type Contenedor = {
   capacidad_litros: number
   estado: string
   eliminado_en: string | null
+  numero_punto: number
+  nombre_ubicacion: string | null
+  latitud: number | string | null
+  longitud: number | string | null
 }
 
 const TIPOS = ['plastico', 'papel', 'vidrio', 'organico'] as const
 const ESTADOS = ['activo', 'mantenimiento', 'fuera_de_servicio'] as const
 const ZONAS = ['via_publica', 'comercial'] as const
+const PATRON_PUNTO = /^\d{1,3}$/
 
 const estadoEtiqueta: Record<string, string> = {
   activo: 'Activo', mantenimiento: 'En mantenimiento', fuera_de_servicio: 'Fuera de servicio',
 }
 
-type BusquedaParams = { tipo?: string; estado?: string; zona?: string; eliminados?: string; nivel?: string }
+type BusquedaParams = {
+  tipo?: string; estado?: string; zona?: string; eliminados?: string; nivel?: string; punto?: string
+}
 
 export default async function ListadoContenedoresPage({
   searchParams,
@@ -37,7 +44,7 @@ export default async function ListadoContenedoresPage({
 
   let consulta = supabase
     .from('contenedores')
-    .select('id, codigo, tipo_residuo, zona_tipo, capacidad_litros, estado, eliminado_en')
+    .select('id, codigo, tipo_residuo, zona_tipo, capacidad_litros, estado, eliminado_en, numero_punto, nombre_ubicacion, latitud, longitud')
     .order('codigo')
 
   // Los filtros vienen de la URL (query params) — no son datos de confianza
@@ -48,11 +55,13 @@ export default async function ListadoContenedoresPage({
   const estado = ESTADOS.find((e) => e === sp.estado)
   const zona = ZONAS.find((z) => z === sp.zona)
   const nivelCritico = sp.nivel === 'critico'
+  const punto = sp.punto && PATRON_PUNTO.test(sp.punto) ? Number(sp.punto) : undefined
 
   if (!verEliminados) consulta = consulta.is('eliminado_en', null)
   if (tipo) consulta = consulta.eq('tipo_residuo', tipo)
   if (estado) consulta = consulta.eq('estado', estado)
   if (zona) consulta = consulta.eq('zona_tipo', zona)
+  if (punto !== undefined) consulta = consulta.eq('numero_punto', punto)
 
   const [{ data: contenedores }, { data: lecturas }] = await Promise.all([
     consulta,
@@ -69,7 +78,8 @@ export default async function ListadoContenedoresPage({
   const filas = nivelCritico
     ? filasSinNivel.filter((c) => (nivelPorContenedor.get(c.id) ?? 0) >= NIVEL_UMBRAL_ALTO)
     : filasSinNivel
-  const hayFiltros = Boolean(tipo || estado || zona || nivelCritico)
+  const hayFiltros = Boolean(tipo || estado || zona || nivelCritico || punto !== undefined)
+  const isla = punto !== undefined ? filas[0] : undefined
 
   return (
     <main className="min-h-screen relative">
@@ -100,6 +110,25 @@ export default async function ListadoContenedoresPage({
             </Link>
           )}
         </div>
+
+        {punto !== undefined && (
+          <div className="tarjeta-vidrio p-4 mb-5 flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <p className="font-semibold text-foreground">
+                Isla PL-{String(punto).padStart(3, '0')}
+                {isla?.nombre_ubicacion ? ` — ${isla.nombre_ubicacion}` : ''}
+              </p>
+              {isla?.latitud !== undefined && isla?.longitud !== undefined && (
+                <p className="text-xs text-brand-muted font-mono">
+                  {Number(isla.latitud).toFixed(6)}, {Number(isla.longitud).toFixed(6)}
+                </p>
+              )}
+            </div>
+            <Link href="/contenedores" className="text-sm text-brand-muted hover:text-brand-emerald">
+              Ver todos los contenedores →
+            </Link>
+          </div>
+        )}
 
         <form method="get" className="flex flex-wrap items-end gap-3 mb-5">
           <div>
@@ -140,6 +169,7 @@ export default async function ListadoContenedoresPage({
               <tr className="text-left text-brand-muted border-b border-brand-border">
                 <th className="py-3 px-4 font-semibold">Código</th>
                 <th className="py-3 px-4 font-semibold">Tipo</th>
+                <th className="py-3 px-4 font-semibold">Ubicación</th>
                 <th className="py-3 px-4 font-semibold">Zona</th>
                 <th className="py-3 px-4 font-semibold text-right">Capacidad</th>
                 <th className="py-3 px-4 font-semibold text-right">Última lectura</th>
@@ -157,6 +187,11 @@ export default async function ListadoContenedoresPage({
                       </Link>
                     </td>
                     <td className="py-3 px-4 text-brand-muted">{TIPO_ETIQUETA[c.tipo_residuo] ?? c.tipo_residuo}</td>
+                    <td className="py-3 px-4 text-brand-muted">
+                      <Link href={`/contenedores?punto=${String(c.numero_punto).padStart(3, '0')}`} className="hover:text-brand-emerald">
+                        {c.nombre_ubicacion ?? `Isla PL-${String(c.numero_punto).padStart(3, '0')}`}
+                      </Link>
+                    </td>
                     <td className="py-3 px-4 text-brand-muted">{ZONA_ETIQUETA[c.zona_tipo]}</td>
                     <td className="py-3 px-4 text-brand-muted text-right">{c.capacidad_litros} L</td>
                     <td className="py-3 px-4 text-right">

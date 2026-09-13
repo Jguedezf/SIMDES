@@ -5,30 +5,12 @@ import MapaContenedoresWrapper from './mapa-contenedores-wrapper'
 import ModalConfirmacion from './modal-confirmacion'
 import Toast, { type ToastTipo } from './toast'
 import { crearClienteNavegador } from '@/lib/supabase-navegador'
+import { obtenerDireccion } from '@/lib/geocodificar'
 import type { ContenedorMapa } from './mapa-contenedores'
 
 type Props = {
   contenedores: ContenedorMapa[]
   editable: boolean
-}
-
-// Convierte lat/lng a una descripción legible (Nominatim/OpenStreetMap, sin
-// llave — política de uso pública para volumen bajo como este). Si falla o
-// tarda, se cae a null y el modal muestra las coordenadas en su lugar.
-async function obtenerDireccion(lat: number, lng: number): Promise<string | null> {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=17&addressdetails=1`,
-      { headers: { 'Accept-Language': 'es' }, signal: AbortSignal.timeout(4000) }
-    )
-    if (!res.ok) return null
-    const datos = await res.json()
-    const dir = datos.address ?? {}
-    const partes = [dir.road, dir.suburb || dir.neighbourhood, dir.city || dir.town].filter(Boolean)
-    return partes.length ? partes.join(', ') : (datos.display_name ?? null)
-  } catch {
-    return null
-  }
 }
 
 // Envuelve el mapa de solo-lectura para agregar la reubicación por arrastre
@@ -56,6 +38,11 @@ export default function MapaPanel({ contenedores, editable }: Props) {
     }
 
     const direccion = await obtenerDireccion(lat, lng)
+    // El nombre de ubicación es "mejor esfuerzo" — si Nominatim no resuelve
+    // nada, se deja el nombre anterior tal cual en vez de borrarlo con null.
+    if (direccion) {
+      await supabase.from('contenedores').update({ nombre_ubicacion: direccion }).in('id', idsContenedores)
+    }
     setGuardando(false)
     setConfirmacion({
       mensaje: direccion
