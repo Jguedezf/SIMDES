@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { crearClienteNavegador } from '@/lib/supabase-navegador'
 import MapaSelectorPuntoWrapper from '@/components/mapa-selector-punto-wrapper'
 import { generarCodigo, siguienteNumeroPunto, ZONA_ETIQUETA, type TipoResiduo, type ZonaTipo } from '@/lib/codigo-contenedor'
@@ -104,14 +103,12 @@ export default function FormularioNuevoContenedor() {
   return (
     <main className="min-h-screen p-6">
       <div className="max-w-2xl mx-auto">
-        <Link href="/" className="text-sm text-brand-emerald hover:underline">← Volver al panel</Link>
-
-        <h1 className="text-2xl font-bold text-foreground mt-2 mb-1">Registrar punto limpio</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-1">Registrar punto limpio</h1>
         <p className="text-brand-muted mb-6">
           Crea una isla ecológica completa: un contenedor segregado por cada tipo de residuo que marques, en el mismo punto físico.
         </p>
 
-        <form onSubmit={guardar} className="tarjeta-vidrio p-5 space-y-6">
+        <form onSubmit={guardar} className="tarjeta-vidrio tarjeta-entrada p-5 space-y-6">
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">Ubicación</label>
             <MapaSelectorPuntoWrapper

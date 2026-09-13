@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { crearClienteNavegador } from '@/lib/supabase-navegador'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
@@ -177,9 +176,7 @@ export default function DetalleContenedorCliente({
   return (
     <main className="min-h-screen p-6">
       <div className="max-w-3xl mx-auto">
-        <Link href="/" className="text-sm text-brand-emerald hover:underline">← Volver al panel</Link>
-
-        <div className="flex items-center justify-between mt-2 mb-6 flex-wrap gap-3">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-foreground">{contenedor.codigo}</h1>
             <p className="text-brand-muted capitalize">
@@ -208,7 +205,7 @@ export default function DetalleContenedorCliente({
           </div>
         )}
 
-        <div className="tarjeta-vidrio p-5 mb-6">
+        <div className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-3">Estado del contenedor</h2>
           {esAdministrador ? (
             <>
@@ -238,7 +235,7 @@ export default function DetalleContenedorCliente({
         </div>
 
         {esAdministrador && (
-          <div className="tarjeta-vidrio p-5 mb-6">
+          <div className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5 mb-6" style={{ animationDelay: '80ms' }}>
             <h2 className="font-semibold text-foreground mb-1">Administración</h2>
             <p className="text-xs text-brand-muted mb-3">
               Eliminar es una corrección administrativa (ej. contenedor registrado por error) — lo oculta del listado, el mapa y el dashboard, pero conserva su historial. No es lo mismo que &quot;Fuera de servicio&quot;, que es el retiro operativo real de un contenedor que sigue existiendo físicamente.
@@ -258,7 +255,7 @@ export default function DetalleContenedorCliente({
           </div>
         )}
 
-        <div className="tarjeta-vidrio p-5 mb-6">
+        <div className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5 mb-6" style={{ animationDelay: '160ms' }}>
           <h2 className="font-semibold text-foreground mb-4">Historial de llenado</h2>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={lecturas.map(l => {
@@ -291,7 +288,7 @@ export default function DetalleContenedorCliente({
           {!lecturas.length && <p className="text-brand-muted text-sm">Sin lecturas todavía.</p>}
         </div>
 
-        <div className="tarjeta-vidrio p-5">
+        <div className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5" style={{ animationDelay: '240ms' }}>
           <h2 className="font-semibold text-foreground mb-3">Predicción (IA)</h2>
           {prediccion ? (
             <div className="flex items-center gap-3 flex-wrap">

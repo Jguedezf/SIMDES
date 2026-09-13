@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Navbar from '@/components/navbar'
 import { exigirRol } from '@/lib/auth'
 import { crearClienteServidor } from '@/lib/supabase-servidor'
 import { calcularRango, diasDelRango } from '@/lib/rango-fechas'
@@ -142,17 +143,17 @@ export default async function ReportesPage({
   const enlaceRango = (preset: string) => `/reportes?rango=${preset}`
 
   return (
-    <main className="min-h-screen p-6">
-      <div className="max-w-4xl mx-auto">
-        <Link href="/" className="text-sm text-brand-emerald hover:underline">← Volver al panel</Link>
-        <div className="flex items-center justify-between mt-2 mb-6">
+    <main className="min-h-screen">
+      <Navbar />
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-foreground">Reportes y Gobierno de IA</h1>
           <span className="text-sm text-brand-muted capitalize">{perfil.rol}</span>
         </div>
 
         <ExportarReportes datos={datosReporte} />
 
-        <div className="tarjeta-vidrio p-5 mb-6">
+        <div className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-1">Período</h2>
           <p className="text-xs text-brand-muted mb-3">Todo el reporte de abajo (alertas, historial y tokens) corresponde a este rango.</p>
           <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -179,7 +180,7 @@ export default async function ReportesPage({
           </p>
         </div>
 
-        <div className="tarjeta-vidrio p-5 mb-6">
+        <div className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5 mb-6" style={{ animationDelay: '80ms' }}>
           <h2 className="font-semibold text-foreground mb-4">Alertas — {rango.etiqueta}</h2>
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="rounded-lg p-3 text-center bg-brand-coral/10 border border-brand-coral/20">
@@ -216,7 +217,7 @@ export default async function ReportesPage({
           </div>
         </div>
 
-        <div className="tarjeta-vidrio p-5 mb-6">
+        <div className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5 mb-6" style={{ animationDelay: '160ms' }}>
           <h2 className="font-semibold text-foreground mb-1">Estado de sensores</h2>
           <p className="text-xs text-brand-muted mb-4">
             Un contenedor queda &quot;sin señal&quot; si su sensor no reportó ninguna lectura en las últimas {UMBRAL_SIN_SENAL_HORAS} horas, o nunca reportó — no se asume que todos los sensores siempre responden.
@@ -248,7 +249,7 @@ export default async function ReportesPage({
           )}
         </div>
 
-        <div className="tarjeta-vidrio p-5">
+        <div className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5" style={{ animationDelay: '240ms' }}>
           <h2 className="font-semibold text-foreground mb-4">Consumo de tokens de IA — {rango.etiqueta}</h2>
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="rounded-lg p-3 text-center bg-white/5 border border-transparent">

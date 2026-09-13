@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { obtenerPerfil } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
+import Navbar from '@/components/navbar'
 import PerfilCliente from './perfil-cliente'
 
 export default async function PerfilPage() {
@@ -20,5 +21,10 @@ export default async function PerfilPage() {
     cuadrilla = data
   }
 
-  return <PerfilCliente perfil={perfil} cuadrilla={cuadrilla} />
+  return (
+    <>
+      <Navbar />
+      <PerfilCliente perfil={perfil} cuadrilla={cuadrilla} />
+    </>
+  )
 }
