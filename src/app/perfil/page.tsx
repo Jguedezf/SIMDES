@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { obtenerPerfil } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import Navbar from '@/components/navbar'
+import FondoPantalla from '@/components/fondo-pantalla'
 import PerfilCliente from './perfil-cliente'
 
 export default async function PerfilPage() {
@@ -22,9 +23,10 @@ export default async function PerfilPage() {
   }
 
   return (
-    <>
+    <div className="relative">
+      <FondoPantalla nombre="perfil" alt="Fondo de la pantalla de perfil" />
       <Navbar />
       <PerfilCliente perfil={perfil} cuadrilla={cuadrilla} />
-    </>
+    </div>
   )
 }

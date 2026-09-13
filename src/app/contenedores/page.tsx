@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { obtenerPerfil } from '@/lib/auth'
 import Navbar from '@/components/navbar'
+import FondoPantalla from '@/components/fondo-pantalla'
 import { nivelClaseTailwind } from '@/lib/nivel'
 import { ZONA_ETIQUETA, type TipoResiduo, type ZonaTipo } from '@/lib/codigo-contenedor'
 
@@ -67,7 +68,8 @@ export default async function ListadoContenedoresPage({
   const hayFiltros = Boolean(tipo || estado || zona)
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen relative">
+      <FondoPantalla nombre="contenedores" alt="Fondo del listado de contenedores" />
       <Navbar />
       <div className="max-w-5xl mx-auto p-6">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">

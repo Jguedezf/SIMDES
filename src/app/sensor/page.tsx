@@ -1,4 +1,5 @@
 import Navbar from '@/components/navbar'
+import FondoPantalla from '@/components/fondo-pantalla'
 
 const COMPONENTES = [
   { nombre: 'Sensor ultrasónico HC-SR04', costo: '~3 USD', funcion: 'Medición de distancia / nivel de llenado' },
@@ -9,7 +10,8 @@ const COMPONENTES = [
 
 export default function SensorPage() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen relative">
+      <FondoPantalla nombre="sensor" alt="Fondo de la pantalla del módulo sensor" />
       <Navbar />
       <div className="max-w-2xl mx-auto p-6">
         <h1 className="text-2xl font-bold text-foreground mb-1">Módulo sensor SIMDES-Node</h1>

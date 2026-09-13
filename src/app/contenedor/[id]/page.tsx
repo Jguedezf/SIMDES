@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { obtenerPerfil } from '@/lib/auth'
 import Navbar from '@/components/navbar'
+import FondoPantalla from '@/components/fondo-pantalla'
 import DetalleContenedorCliente, { type Contenedor, type Lectura, type Prediccion } from './detalle-cliente'
 
 export default async function DetalleContenedorPage({ params }: { params: Promise<{ id: string }> }) {
@@ -34,7 +35,8 @@ export default async function DetalleContenedorPage({ params }: { params: Promis
   if (!contenedor) notFound()
 
   return (
-    <>
+    <div className="relative">
+      <FondoPantalla nombre="contenedor" alt="Fondo del detalle de un contenedor" />
       <Navbar />
       <DetalleContenedorCliente
         contenedorInicial={contenedor as Contenedor}
@@ -42,6 +44,6 @@ export default async function DetalleContenedorPage({ params }: { params: Promis
         prediccionInicial={(prediccion as Prediccion | null) ?? null}
         esAdministrador={perfil?.rol === 'administrador'}
       />
-    </>
+    </div>
   )
 }

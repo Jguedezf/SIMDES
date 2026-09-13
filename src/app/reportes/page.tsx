@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Navbar from '@/components/navbar'
+import FondoPantalla from '@/components/fondo-pantalla'
 import { exigirRol } from '@/lib/auth'
 import { crearClienteServidor } from '@/lib/supabase-servidor'
 import { calcularRango, diasDelRango } from '@/lib/rango-fechas'
@@ -143,7 +144,8 @@ export default async function ReportesPage({
   const enlaceRango = (preset: string) => `/reportes?rango=${preset}`
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen relative">
+      <FondoPantalla nombre="reportes" alt="Fondo de la pantalla de reportes" />
       <Navbar />
       <div className="max-w-4xl mx-auto p-6">
         <div className="flex items-center justify-between mb-6">

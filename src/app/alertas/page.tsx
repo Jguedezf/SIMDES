@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { obtenerPerfil } from '@/lib/auth'
 import Navbar from '@/components/navbar'
+import FondoPantalla from '@/components/fondo-pantalla'
 import BotonResolverAlerta from './boton-resolver'
 
 type Alerta = {
@@ -31,7 +32,8 @@ export default async function AlertasPage() {
     .limit(50)) as { data: Alerta[] | null }
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen relative">
+      <FondoPantalla nombre="alertas" alt="Fondo del panel de alertas" />
       <Navbar />
       <div className="max-w-3xl mx-auto p-6">
         <h1 className="text-2xl font-bold text-foreground mb-6">Panel de Alertas</h1>
