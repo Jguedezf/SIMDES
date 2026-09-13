@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { obtenerPerfil } from '@/lib/auth'
 import Navbar from '@/components/navbar'
 import HeroLanding from '@/components/hero-landing'
+import { TIPO_ETIQUETA, type TipoResiduo } from '@/lib/codigo-contenedor'
 
 type Contenedor = {
   id: string
@@ -131,7 +132,7 @@ export default async function DashboardPage() {
                     {nivel !== null ? `${nivel}%` : 'Sin datos'}
                   </span>
                 </div>
-                <p className="text-sm text-brand-muted capitalize">{c.tipo_residuo}</p>
+                <p className="text-sm text-brand-muted">{TIPO_ETIQUETA[c.tipo_residuo as TipoResiduo] ?? c.tipo_residuo}</p>
                 <p className="text-sm text-brand-muted">{c.capacidad_litros} L · {c.estado}</p>
               </Link>
             )

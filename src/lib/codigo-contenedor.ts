@@ -25,6 +25,22 @@ export const TIPO_LETRA: Record<TipoResiduo, string> = {
   organico: 'M',
 }
 
+// El valor de `tipo_residuo` en la base de datos va sin tilde (CHECK
+// constraint: 'plastico'/'organico', no 'plástico'/'orgánico') — es el valor
+// correcto de almacenamiento, no un error. El error real (encontrado el
+// 13/09) era imprimir ese valor crudo en pantalla en vez de pasarlo por una
+// etiqueta de presentación: el popup del mapa, la tarjeta del dashboard y el
+// detalle de contenedor mostraban "Plastico"/"Organico" sin tilde. Única
+// fuente de la etiqueta correcta — antes existía una copia local solo en
+// /contenedores, duplicándose (y pudiendo desincronizarse) en cada pantalla
+// nueva que necesitara mostrar el tipo.
+export const TIPO_ETIQUETA: Record<TipoResiduo, string> = {
+  plastico: 'Plástico',
+  papel: 'Papel',
+  vidrio: 'Vidrio',
+  organico: 'Orgánico',
+}
+
 const PATRON_CODIGO = /^PL-(\d{3})-[RC]-[YAVM]$/
 
 export function generarCodigo(numeroPunto: number, zona: ZonaTipo, tipo: TipoResiduo) {
