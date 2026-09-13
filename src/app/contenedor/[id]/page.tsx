@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { obtenerPerfil } from '@/lib/auth'
+import Navbar from '@/components/navbar'
 import DetalleContenedorCliente, { type Contenedor, type Lectura, type Prediccion } from './detalle-cliente'
 
 export default async function DetalleContenedorPage({ params }: { params: Promise<{ id: string }> }) {
@@ -33,11 +34,14 @@ export default async function DetalleContenedorPage({ params }: { params: Promis
   if (!contenedor) notFound()
 
   return (
-    <DetalleContenedorCliente
-      contenedorInicial={contenedor as Contenedor}
-      lecturasIniciales={(lecturas ?? []) as Lectura[]}
-      prediccionInicial={(prediccion as Prediccion | null) ?? null}
-      esAdministrador={perfil?.rol === 'administrador'}
-    />
+    <>
+      <Navbar />
+      <DetalleContenedorCliente
+        contenedorInicial={contenedor as Contenedor}
+        lecturasIniciales={(lecturas ?? []) as Lectura[]}
+        prediccionInicial={(prediccion as Prediccion | null) ?? null}
+        esAdministrador={perfil?.rol === 'administrador'}
+      />
+    </>
   )
 }

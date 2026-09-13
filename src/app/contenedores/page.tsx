@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { obtenerPerfil } from '@/lib/auth'
+import Navbar from '@/components/navbar'
 import { nivelClaseTailwind } from '@/lib/nivel'
 import { ZONA_ETIQUETA, type TipoResiduo, type ZonaTipo } from '@/lib/codigo-contenedor'
 
@@ -66,11 +67,10 @@ export default async function ListadoContenedoresPage({
   const hayFiltros = Boolean(tipo || estado || zona)
 
   return (
-    <main className="min-h-screen p-6">
-      <div className="max-w-5xl mx-auto">
-        <Link href="/" className="text-sm text-brand-emerald hover:underline">← Volver al panel</Link>
-
-        <div className="flex items-center justify-between mt-2 mb-6 flex-wrap gap-3">
+    <main className="min-h-screen">
+      <Navbar />
+      <div className="max-w-5xl mx-auto p-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Contenedores</h1>
             <p className="text-brand-muted text-sm">{filas.length} registro{filas.length === 1 ? '' : 's'}</p>
@@ -118,7 +118,7 @@ export default async function ListadoContenedoresPage({
           )}
         </form>
 
-        <div className="tarjeta-vidrio overflow-x-auto">
+        <div className="tarjeta-vidrio tarjeta-entrada overflow-x-auto">
           <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-left text-brand-muted border-b border-brand-border">

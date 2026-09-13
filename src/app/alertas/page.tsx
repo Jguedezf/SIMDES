@@ -1,6 +1,6 @@
-import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { obtenerPerfil } from '@/lib/auth'
+import Navbar from '@/components/navbar'
 import BotonResolverAlerta from './boton-resolver'
 
 type Alerta = {
@@ -31,14 +31,18 @@ export default async function AlertasPage() {
     .limit(50)) as { data: Alerta[] | null }
 
   return (
-    <main className="min-h-screen p-6">
-      <div className="max-w-3xl mx-auto">
-        <Link href="/" className="text-sm text-brand-emerald hover:underline">← Volver al panel</Link>
-        <h1 className="text-2xl font-bold text-foreground mt-2 mb-6">Panel de Alertas</h1>
+    <main className="min-h-screen">
+      <Navbar />
+      <div className="max-w-3xl mx-auto p-6">
+        <h1 className="text-2xl font-bold text-foreground mb-6">Panel de Alertas</h1>
 
         <div className="space-y-3">
-          {alertas?.map((a) => (
-            <div key={a.id} className="tarjeta-vidrio p-4">
+          {alertas?.map((a, i) => (
+            <div
+              key={a.id}
+              className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-4"
+              style={{ animationDelay: `${Math.min(i, 10) * 30}ms` }}
+            >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold text-foreground font-mono">{a.contenedores?.codigo ?? a.contenedor_id}</span>
                 <span className={`text-xs font-bold px-2 py-1 rounded-full capitalize ${estadoClase[a.estado] ?? 'bg-brand-border text-brand-muted'}`}>

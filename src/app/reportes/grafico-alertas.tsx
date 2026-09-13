@@ -33,33 +33,64 @@ export default function GraficoAlertas({ pendiente, enviada, resuelta }: Props) 
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-4">
-      <ResponsiveContainer width="100%" height={200} className="max-w-[200px]">
-        <PieChart>
-          <Pie
-            data={datos}
-            dataKey="valor"
-            nameKey="nombre"
-            innerRadius={55}
-            outerRadius={80}
-            paddingAngle={datos.length > 1 ? 2 : 0}
-            stroke="#1A1A2E"
-            strokeWidth={2}
-            label={({ percent }) => `${Math.round((percent ?? 0) * 100)}%`}
-            labelLine={false}
-          >
-            {datos.map((d) => (
-              <Cell key={d.nombre} fill={COLOR_ESTADO[d.nombre]} />
-            ))}
-          </Pie>
-          <Tooltip
-            contentStyle={{ background: '#1A1A2E', border: '1px solid #2A2A45', borderRadius: 8, color: '#F5F5F7' }}
-            formatter={(valor, nombre) => {
-              const n = Number(valor)
-              return [`${n} (${Math.round((n / total) * 100)}%)`, String(nombre)]
-            }}
-          />
-        </PieChart>
-      </ResponsiveContainer>
+      {/* Profundidad tipo 3D pedida el 13/09 ("no plana como está ahora"):
+          una segunda dona oscura y difuminada debajo, desplazada, simula el
+          grosor/sombra proyectada de un torus real; la dona de encima usa
+          gradientes radiales por sector (no color plano) para el brillo
+          "biselado", más un drop-shadow de color sobre el conjunto. */}
+      <div className="relative w-full max-w-[200px] h-[200px] shrink-0">
+        <div className="absolute inset-0 translate-y-[7px] translate-x-[3px] opacity-70" style={{ filter: 'blur(5px) brightness(0.35)' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={datos} dataKey="valor" nameKey="nombre" innerRadius={55} outerRadius={80} paddingAngle={datos.length > 1 ? 2 : 0} isAnimationActive={false}>
+                {datos.map((d) => (
+                  <Cell key={d.nombre} fill={COLOR_ESTADO[d.nombre]} stroke="none" />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="absolute inset-0" style={{ filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.5))' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <defs>
+                {datos.map((d) => (
+                  <radialGradient key={d.nombre} id={`grad-${d.nombre}`} cx="35%" cy="30%" r="75%">
+                    <stop offset="0%" stopColor={COLOR_ESTADO[d.nombre]} stopOpacity={1} />
+                    <stop offset="55%" stopColor={COLOR_ESTADO[d.nombre]} stopOpacity={1} />
+                    <stop offset="100%" stopColor={COLOR_ESTADO[d.nombre]} stopOpacity={0.72} />
+                  </radialGradient>
+                ))}
+              </defs>
+              <Pie
+                data={datos}
+                dataKey="valor"
+                nameKey="nombre"
+                innerRadius={55}
+                outerRadius={80}
+                paddingAngle={datos.length > 1 ? 2 : 0}
+                stroke="#1A1A2E"
+                strokeWidth={2}
+                label={({ percent }) => `${Math.round((percent ?? 0) * 100)}%`}
+                labelLine={false}
+              >
+                {datos.map((d) => (
+                  <Cell key={d.nombre} fill={`url(#grad-${d.nombre})`} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{ background: '#1A1A2E', border: '1px solid #2A2A45', borderRadius: 8, color: '#F5F5F7' }}
+                formatter={(valor, nombre) => {
+                  const n = Number(valor)
+                  return [`${n} (${Math.round((n / total) * 100)}%)`, String(nombre)]
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
       <div className="flex sm:flex-col gap-3 sm:gap-1.5 text-sm flex-wrap justify-center">
         {(['Pendientes', 'Enviadas', 'Resueltas'] as const).map((nombre) => {
           const valor = nombre === 'Pendientes' ? pendiente : nombre === 'Enviadas' ? enviada : resuelta
