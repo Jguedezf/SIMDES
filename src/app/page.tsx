@@ -56,7 +56,17 @@ export default async function DashboardPage() {
     }))
 
   const puntosUnicos = new Set(contenedoresMapa.map((c) => `${c.latitud.toFixed(6)},${c.longitud.toFixed(6)}`)).size
-  const nivelesConocidos = Array.from(ultimaLecturaPorContenedor.values())
+  // Bug real encontrado el 13/09 cruzando "En nivel crítico" contra el
+  // filtro ?nivel=critico de /contenedores (9 vs 8): esto tomaba TODOS los
+  // niveles de la vista ultima_lectura_por_contenedor sin importar si el
+  // contenedor seguía existiendo o estaba eliminado lógicamente — un
+  // contenedor eliminado con una lectura crítica vieja seguía sumando al
+  // conteo del dashboard aunque ya no apareciera en ningún listado. Ahora
+  // se cruza contra `contenedores` (ya filtrado por eliminado_en is null),
+  // el mismo conjunto que ya se usa para "Puntos monitoreados".
+  const nivelesConocidos = (contenedores ?? [])
+    .map((c: Contenedor) => ultimaLecturaPorContenedor.get(c.id))
+    .filter((n): n is number => n !== undefined)
   const criticos = nivelesConocidos.filter((n) => n >= 85).length
   const promedio = nivelesConocidos.length
     ? Math.round(nivelesConocidos.reduce((suma, n) => suma + n, 0) / nivelesConocidos.length)
@@ -69,22 +79,32 @@ export default async function DashboardPage() {
       {!perfil && <HeroLanding puntosMonitoreados={puntosUnicos} nivelPromedio={promedio} />}
 
       <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5 mb-6 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-brand-border">
-          <div className="pb-4 sm:pb-0 sm:pr-5">
+        {/* Antes eran 3 <div> estáticos, desconectados de todo — feedback de
+            Johanna (13/09): quiere que cada una "se separe" a su propia
+            vista, no un número fijo. Cada una lleva a un destino coherente
+            con lo que cuenta (no todas al mismo listado genérico):
+            "Puntos monitoreados" es la ancla al mapa (un marcador por punto,
+            el análogo real de "puntos" — /contenedores lista contenedores
+            individuales, una granularidad distinta); "En nivel crítico"
+            lleva al filtro real ?nivel=critico en /contenedores; "Nivel
+            promedio" lleva a /reportes, donde ese promedio se ve como
+            tendencia histórica, no como un registro suelto. */}
+        <div className="tarjeta-vidrio tarjeta-entrada mb-6 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-brand-border overflow-hidden">
+          <a href="#mapa" className="p-5 pb-4 sm:pb-5 transition hover:bg-white/5">
             <p className="text-sm text-brand-muted mb-1">Puntos monitoreados</p>
             <p className="text-3xl font-bold text-foreground">{puntosUnicos}</p>
-          </div>
-          <div className="py-4 sm:py-0 sm:px-5">
+          </a>
+          <Link href="/contenedores?nivel=critico" className="p-5 py-4 sm:py-5 transition hover:bg-white/5">
             <p className="text-sm text-brand-muted mb-1">En nivel crítico (≥85%)</p>
             <p className={`text-3xl font-bold ${criticos > 0 ? 'text-brand-coral' : 'text-foreground'}`}>{criticos}</p>
-          </div>
-          <div className="pt-4 sm:pt-0 sm:pl-5">
+          </Link>
+          <Link href="/reportes" className="p-5 pt-4 sm:pt-5 transition hover:bg-white/5">
             <p className="text-sm text-brand-muted mb-1">Nivel promedio de llenado</p>
             <p className="text-3xl font-bold text-foreground">{promedio !== null ? `${promedio}%` : '—'}</p>
-          </div>
+          </Link>
         </div>
 
-        <div className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5 mb-6" style={{ animationDelay: '60ms' }}>
+        <div id="mapa" className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5 mb-6 scroll-mt-20" style={{ animationDelay: '60ms' }}>
           <h2 className="font-semibold text-foreground mb-4">Mapa de contenedores</h2>
           {contenedoresMapa.length ? (
             <div className="overflow-hidden rounded-xl border border-brand-border">
