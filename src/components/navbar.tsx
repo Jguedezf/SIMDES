@@ -11,6 +11,13 @@ const navLinkClase =
 // capturas, corregido el 13/09 para que el menú esté siempre visible sin
 // importar la pantalla. Server Component: resuelve su propio perfil, así
 // que cualquier página lo usa sin pasarle props.
+//
+// Alertas y Sensor solo se muestran con sesión iniciada (13/09): no es una
+// restricción de seguridad (RLS ya deja esas tablas de lectura pública, con
+// o sin este link) — es una decisión de navegación/negocio: un visitante
+// anónimo en la landing solo necesita ver "Contenedores" (la propuesta de
+// transparencia ciudadana) e "Iniciar sesión", no el feed operativo interno
+// de alertas ni la ficha técnica de hardware.
 export default async function Navbar() {
   const perfil = await obtenerPerfil()
 
@@ -33,8 +40,12 @@ export default async function Navbar() {
           {(perfil?.rol === 'administrador' || perfil?.rol === 'directiva') && (
             <Link href="/reportes" className={navLinkClase}>Reportes</Link>
           )}
-          <Link href="/alertas" className={navLinkClase}>Alertas</Link>
-          <Link href="/sensor" className={navLinkClase}>Sensor</Link>
+          {perfil && (
+            <>
+              <Link href="/alertas" className={navLinkClase}>Alertas</Link>
+              <Link href="/sensor" className={navLinkClase}>Sensor</Link>
+            </>
+          )}
           {perfil ? (
             <div className="flex items-center gap-3 pl-3 ml-2 border-l border-brand-border">
               <Link href="/perfil" className="text-xs text-brand-muted hover:text-brand-emerald hidden sm:inline">
