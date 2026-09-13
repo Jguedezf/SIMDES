@@ -152,7 +152,15 @@ body {
    a diferencia de .tarjeta-vidrio (pensada para reposar sobre el fondo de
    página), aquí el vidrio translúcido deja ver la información de detrás y
    choca visualmente (feedback de Johanna, 13/09: el selector de rango de
-   /reportes se veía transparente y encimado con las tarjetas de abajo). */
+   /reportes se veía transparente y encimado con las tarjetas de abajo).
+   GOTCHA real (13/09): .tarjeta-vidrio crea su propio stacking context
+   (backdrop-filter lo fuerza, sin importar el `position`). Un popover con
+   z-index alto DENTRO de una .tarjeta-vidrio solo gana ese z-index frente a
+   otros elementos de esa MISMA tarjeta — no frente a una tarjeta hermana
+   posterior en el DOM, que pinta encima igual. Si un popover necesita
+   sobresalir de los límites visuales de su tarjeta contenedora, esa tarjeta
+   necesita su propio `relative z-30` (o similar) en el nivel del padre común
+   — ver el comentario en src/app/reportes/page.tsx (tarjeta "Período"). */
 .popover-solido {
   border-radius: 16px;
   border: 1px solid var(--color-brand-border);
