@@ -15,6 +15,8 @@ type Contenedor = {
   estado: string
   latitud: number | string | null
   longitud: number | string | null
+  numero_punto: number
+  nombre_ubicacion: string | null
 }
 
 type Lectura = {
@@ -30,7 +32,7 @@ export default async function DashboardPage() {
     obtenerPerfil(),
     supabase
       .from('contenedores')
-      .select('id, codigo, tipo_residuo, capacidad_litros, estado, latitud, longitud')
+      .select('id, codigo, tipo_residuo, capacidad_litros, estado, latitud, longitud, numero_punto, nombre_ubicacion')
       .is('eliminado_en', null)
       .order('codigo'),
     // Vista con la última lectura por contenedor (DISTINCT ON en el servidor)
@@ -54,9 +56,14 @@ export default async function DashboardPage() {
       latitud: Number(c.latitud),
       longitud: Number(c.longitud),
       nivel: ultimaLecturaPorContenedor.get(c.id) ?? null,
+      numero_punto: c.numero_punto,
+      nombre_ubicacion: c.nombre_ubicacion,
     }))
 
-  const puntosUnicos = new Set(contenedoresMapa.map((c) => `${c.latitud.toFixed(6)},${c.longitud.toFixed(6)}`)).size
+  // Antes se contaba por coincidencia exacta de lat/lng (frágil: dependía de
+  // que las 4 filas de una isla tuvieran los mismos decimales). Ahora se
+  // cuenta por `numero_punto`, la columna explícita que identifica la isla.
+  const puntosUnicos = new Set(contenedoresMapa.map((c) => c.numero_punto)).size
   // Bug real encontrado el 13/09 cruzando "En nivel crítico" contra el
   // filtro ?nivel=critico de /contenedores (9 vs 8): esto tomaba TODOS los
   // niveles de la vista ultima_lectura_por_contenedor sin importar si el

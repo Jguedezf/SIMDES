@@ -15,6 +15,8 @@ export type ContenedorMapa = {
   latitud: number
   longitud: number
   nivel: number | null
+  numero_punto: number
+  nombre_ubicacion: string | null
 }
 
 // Centro aproximado de Parroquia Universidad, Municipio Caroní (piloto SIMDES)
@@ -23,30 +25,34 @@ const CENTRO_DEFECTO: [number, number] = [8.294, -62.714]
 type PuntoMapa = {
   lat: number
   lng: number
+  numeroPunto: number
   etiqueta: string
+  nombreUbicacion: string | null
   contenedores: ContenedorMapa[]
   nivelCritico: number | null
 }
 
-// Un punto limpio agrupa varios contenedores (uno por tipo de residuo) que
-// comparten exactamente las mismas coordenadas. El código "PL-001-Y" identifica
-// el punto "PL-001" y el tipo de residuo "Y" (amarillo/plástico, COVENIN 3838).
-function etiquetaPunto(codigo: string) {
-  const segmentos = codigo.split('-')
-  return segmentos.length > 1 ? segmentos.slice(0, -1).join('-') : codigo
+// Código de 3 dígitos con ceros a la izquierda (PL-001, PL-012, ...), igual
+// al formato ya usado en `codigo-contenedor.ts`.
+function etiquetaPunto(numeroPunto: number) {
+  return `PL-${String(numeroPunto).padStart(3, '0')}`
 }
 
+// Un punto limpio agrupa varios contenedores (uno por tipo de residuo) que
+// pertenecen a la misma isla ecológica — se agrupan por `numero_punto`
+// (columna explícita), no por coincidencia de lat/lng como antes. Antes de
+// esta columna, dos islas que por error compartieran coordenadas se habrían
+// fusionado en el mapa sin que nada lo evitara.
 function agruparPorPunto(contenedores: ContenedorMapa[]): PuntoMapa[] {
-  const grupos = new Map<string, ContenedorMapa[]>()
+  const grupos = new Map<number, ContenedorMapa[]>()
 
   contenedores.forEach((c) => {
-    const clave = `${c.latitud.toFixed(6)},${c.longitud.toFixed(6)}`
-    const grupo = grupos.get(clave)
+    const grupo = grupos.get(c.numero_punto)
     if (grupo) grupo.push(c)
-    else grupos.set(clave, [c])
+    else grupos.set(c.numero_punto, [c])
   })
 
-  return Array.from(grupos.values()).map((grupo) => {
+  return Array.from(grupos.entries()).map(([numeroPunto, grupo]) => {
     const nivelesConocidos = grupo
       .map((c) => c.nivel)
       .filter((n): n is number => n !== null)
@@ -54,7 +60,9 @@ function agruparPorPunto(contenedores: ContenedorMapa[]): PuntoMapa[] {
     return {
       lat: grupo[0].latitud,
       lng: grupo[0].longitud,
-      etiqueta: etiquetaPunto(grupo[0].codigo),
+      numeroPunto,
+      etiqueta: etiquetaPunto(numeroPunto),
+      nombreUbicacion: grupo[0].nombre_ubicacion,
       contenedores: grupo,
       nivelCritico: nivelesConocidos.length ? Math.max(...nivelesConocidos) : null,
     }
@@ -69,7 +77,21 @@ function construirPopup(punto: PuntoMapa) {
   titulo.style.color = '#F5F5F7'
   titulo.textContent = punto.etiqueta
   contenedorHtml.appendChild(titulo)
-  contenedorHtml.appendChild(document.createElement('br'))
+
+  if (punto.nombreUbicacion) {
+    const ubicacion = document.createElement('div')
+    ubicacion.style.color = '#9098B5'
+    ubicacion.style.fontSize = '12px'
+    ubicacion.textContent = punto.nombreUbicacion
+    contenedorHtml.appendChild(ubicacion)
+  }
+
+  const coordenadas = document.createElement('div')
+  coordenadas.style.color = '#9098B5'
+  coordenadas.style.fontSize = '11px'
+  coordenadas.style.marginBottom = '4px'
+  coordenadas.textContent = `${punto.lat.toFixed(6)}, ${punto.lng.toFixed(6)}`
+  contenedorHtml.appendChild(coordenadas)
 
   punto.contenedores
     .slice()
@@ -92,6 +114,16 @@ function construirPopup(punto: PuntoMapa) {
 
       contenedorHtml.appendChild(fila)
     })
+
+  const verIsla = document.createElement('a')
+  verIsla.href = `/contenedores?punto=${String(punto.numeroPunto).padStart(3, '0')}`
+  verIsla.style.display = 'block'
+  verIsla.style.marginTop = '8px'
+  verIsla.style.fontSize = '12px'
+  verIsla.style.fontWeight = '600'
+  verIsla.style.color = '#00D4AA'
+  verIsla.textContent = 'Ver esta isla →'
+  contenedorHtml.appendChild(verIsla)
 
   return contenedorHtml
 }
