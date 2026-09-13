@@ -5,7 +5,7 @@ import { crearClienteNavegador } from '@/lib/supabase-navegador'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts'
-import { ZONA_ETIQUETA, type ZonaTipo } from '@/lib/codigo-contenedor'
+import { ZONA_ETIQUETA, type ZonaTipo, TIPO_ETIQUETA, type TipoResiduo } from '@/lib/codigo-contenedor'
 import { NIVEL_UMBRAL_ALTO } from '@/lib/nivel'
 import ModalConfirmacion from '@/components/modal-confirmacion'
 import Toast, { type ToastTipo } from '@/components/toast'
@@ -180,7 +180,7 @@ export default function DetalleContenedorCliente({
           <div>
             <h1 className="text-2xl font-bold text-foreground">{contenedor.codigo}</h1>
             <p className="text-brand-muted capitalize">
-              {contenedor.tipo_residuo} · {contenedor.capacidad_litros} L · {ZONA_ETIQUETA[contenedor.zona_tipo]}
+              {TIPO_ETIQUETA[contenedor.tipo_residuo as TipoResiduo] ?? contenedor.tipo_residuo} · {contenedor.capacidad_litros} L · {ZONA_ETIQUETA[contenedor.zona_tipo]}
             </p>
           </div>
           <button

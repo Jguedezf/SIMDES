@@ -5,6 +5,7 @@ import type { Map as LeafletMap } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { nivelColorHex } from '@/lib/nivel'
 import { crearIconoContenedor } from '@/lib/icono-contenedor'
+import { TIPO_ETIQUETA, type TipoResiduo } from '@/lib/codigo-contenedor'
 
 export type ContenedorMapa = {
   id: string
@@ -81,8 +82,7 @@ function construirPopup(punto: PuntoMapa) {
       enlace.href = `/contenedor/${c.id}`
       enlace.style.color = nivelColorHex(c.nivel)
       enlace.style.fontWeight = '600'
-      enlace.style.textTransform = 'capitalize'
-      enlace.textContent = c.tipo_residuo
+      enlace.textContent = TIPO_ETIQUETA[c.tipo_residuo as TipoResiduo] ?? c.tipo_residuo
       fila.appendChild(enlace)
 
       const nivelTexto = document.createElement('span')

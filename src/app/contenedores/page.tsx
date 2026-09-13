@@ -4,7 +4,7 @@ import { obtenerPerfil } from '@/lib/auth'
 import Navbar from '@/components/navbar'
 import FondoPantalla from '@/components/fondo-pantalla'
 import { nivelClaseTailwind, NIVEL_UMBRAL_ALTO } from '@/lib/nivel'
-import { ZONA_ETIQUETA, type TipoResiduo, type ZonaTipo } from '@/lib/codigo-contenedor'
+import { ZONA_ETIQUETA, TIPO_ETIQUETA, type TipoResiduo, type ZonaTipo } from '@/lib/codigo-contenedor'
 
 type Contenedor = {
   id: string
@@ -20,9 +20,6 @@ const TIPOS = ['plastico', 'papel', 'vidrio', 'organico'] as const
 const ESTADOS = ['activo', 'mantenimiento', 'fuera_de_servicio'] as const
 const ZONAS = ['via_publica', 'comercial'] as const
 
-const tipoEtiqueta: Record<string, string> = {
-  plastico: 'Plástico', papel: 'Papel', vidrio: 'Vidrio', organico: 'Orgánico',
-}
 const estadoEtiqueta: Record<string, string> = {
   activo: 'Activo', mantenimiento: 'En mantenimiento', fuera_de_servicio: 'Fuera de servicio',
 }
@@ -109,7 +106,7 @@ export default async function ListadoContenedoresPage({
             <label className="block text-xs font-semibold text-brand-muted mb-1">Tipo</label>
             <select name="tipo" defaultValue={tipo ?? ''} className="border border-brand-border bg-brand-surface rounded-lg px-2 py-1.5 text-sm text-foreground">
               <option value="">Todos</option>
-              {TIPOS.map((t) => <option key={t} value={t}>{tipoEtiqueta[t]}</option>)}
+              {TIPOS.map((t) => <option key={t} value={t}>{TIPO_ETIQUETA[t]}</option>)}
             </select>
           </div>
           <div>
@@ -159,7 +156,7 @@ export default async function ListadoContenedoresPage({
                         {c.codigo}
                       </Link>
                     </td>
-                    <td className="py-3 px-4 text-brand-muted capitalize">{tipoEtiqueta[c.tipo_residuo] ?? c.tipo_residuo}</td>
+                    <td className="py-3 px-4 text-brand-muted">{TIPO_ETIQUETA[c.tipo_residuo] ?? c.tipo_residuo}</td>
                     <td className="py-3 px-4 text-brand-muted">{ZONA_ETIQUETA[c.zona_tipo]}</td>
                     <td className="py-3 px-4 text-brand-muted text-right">{c.capacidad_litros} L</td>
                     <td className="py-3 px-4 text-right">
