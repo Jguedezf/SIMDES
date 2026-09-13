@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { crearClienteNavegador } from '@/lib/supabase-navegador'
 import type { Perfil } from '@/lib/auth'
+import { ROL_COLOR_AVATAR, iniciales } from '@/lib/avatar'
 import ModalConfirmacion from '@/components/modal-confirmacion'
 import Toast, { type ToastTipo } from '@/components/toast'
 
@@ -10,19 +11,6 @@ const rolEtiqueta: Record<string, string> = {
   administrador: 'Administrador',
   directiva: 'Directiva',
   cuadrilla: 'Cuadrilla',
-}
-
-const rolColorAvatar: Record<string, string> = {
-  administrador: 'bg-brand-violet',
-  directiva: 'bg-brand-emerald',
-  cuadrilla: 'bg-brand-amber',
-}
-
-function iniciales(nombre: string | null, rol: string) {
-  const partes = (nombre ?? '').trim().split(/\s+/).filter(Boolean)
-  if (partes.length >= 2) return (partes[0][0] + partes[1][0]).toUpperCase()
-  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase()
-  return rol.slice(0, 2).toUpperCase()
 }
 
 // Capacidades por rol — la "extensión" visible del perfil base (Cuenta),
@@ -120,7 +108,7 @@ export default function PerfilCliente({ perfil, cuadrilla }: Props) {
         <div className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-4">Cuenta</h2>
           <div className="flex items-center gap-4 mb-4">
-            <div className={`h-14 w-14 shrink-0 rounded-full flex items-center justify-center text-lg font-bold text-white ${rolColorAvatar[perfil.rol] ?? 'bg-brand-border'}`}>
+            <div className={`h-14 w-14 shrink-0 rounded-full flex items-center justify-center text-lg font-bold text-white ${ROL_COLOR_AVATAR[perfil.rol] ?? 'bg-brand-border'}`}>
               {iniciales(perfil.nombre, perfil.rol)}
             </div>
             <div>
