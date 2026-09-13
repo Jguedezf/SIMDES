@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { obtenerPerfil } from '@/lib/auth'
 import Navbar from '@/components/navbar'
@@ -22,21 +23,41 @@ const estadoClase: Record<string, string> = {
   resuelta: 'bg-brand-emerald/15 text-brand-emerald',
 }
 
-export default async function AlertasPage() {
-  const perfil = await obtenerPerfil()
+const ESTADOS_ALERTA = ['pendiente', 'enviada', 'resuelta'] as const
+const estadoEtiqueta: Record<string, string> = { pendiente: 'Pendientes', enviada: 'Enviadas', resuelta: 'Resueltas' }
 
-  const { data: alertas } = (await supabase
+type BusquedaParams = { estado?: string }
+
+export default async function AlertasPage({ searchParams }: { searchParams: Promise<BusquedaParams> }) {
+  const [perfil, sp] = await Promise.all([obtenerPerfil(), searchParams])
+
+  // El filtro viene de la URL — se valida contra la lista real antes de
+  // usarlo, mismo patrón ya usado en /contenedores (no es dato de confianza
+  // solo porque el link que lo generó ofrezca únicamente estos 3 valores).
+  const estado = ESTADOS_ALERTA.find((e) => e === sp.estado)
+
+  let consulta = supabase
     .from('alertas')
     .select('id, mensaje, canal, estado, creado_en, contenedor_id, cuadrilla_id, contenedores(codigo), cuadrillas(nombre)')
     .order('creado_en', { ascending: false })
-    .limit(50)) as { data: Alerta[] | null }
+    .limit(50)
+  if (estado) consulta = consulta.eq('estado', estado)
+
+  const { data: alertas } = (await consulta) as { data: Alerta[] | null }
 
   return (
     <main className="min-h-screen relative">
       <FondoPantalla nombre="alertas" alt="Fondo del panel de alertas" />
       <Navbar />
       <div className="max-w-3xl mx-auto p-6">
-        <h1 className="text-2xl font-bold text-foreground mb-6">Panel de Alertas</h1>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
+          <h1 className="text-2xl font-bold text-foreground">Panel de Alertas</h1>
+          {estado && (
+            <Link href="/alertas" className="text-xs font-semibold text-brand-muted hover:text-brand-emerald px-3 py-1.5 rounded-full border border-brand-border">
+              Quitar filtro: {estadoEtiqueta[estado]} ✕
+            </Link>
+          )}
+        </div>
 
         <div className="space-y-3">
           {alertas?.map((a, i) => (
@@ -64,7 +85,11 @@ export default async function AlertasPage() {
           ))}
         </div>
 
-        {!alertas?.length && <p className="text-brand-muted text-center mt-10">No hay alertas registradas todavía.</p>}
+        {!alertas?.length && (
+          <p className="text-brand-muted text-center mt-10">
+            {estado ? `No hay alertas ${estadoEtiqueta[estado].toLowerCase()} todavía.` : 'No hay alertas registradas todavía.'}
+          </p>
+        )}
       </div>
     </main>
   )

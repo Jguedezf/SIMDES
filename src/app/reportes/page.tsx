@@ -155,7 +155,16 @@ export default async function ReportesPage({
 
         <ExportarReportes datos={datosReporte} />
 
-        <div className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5 mb-6">
+        {/* relative z-30: bug real encontrado el 13/09, no solo de estilo — cada
+            .tarjeta-vidrio crea su propio stacking context (backdrop-filter lo
+            fuerza aunque la tarjeta sea position:static). Sin este z-index, el
+            popover del calendario (z-40 interno a ESTA tarjeta) quedaba
+            atrapado dentro de ese contexto y la tarjeta "Alertas" de abajo
+            (otra tarjeta con su propio stacking context, pintada después en
+            el DOM) se dibujaba por encima del calendario donde se solapaban
+            — el usuario ni siquiera podía hacer clic en los días tapados por
+            la tarjeta de Alertas. Ver globals.css junto a .popover-solido. */}
+        <div className="relative z-30 tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5 mb-6">
           <h2 className="font-semibold text-foreground mb-1">Período</h2>
           <p className="text-xs text-brand-muted mb-3">Todo el reporte de abajo (alertas, historial y tokens) corresponde a este rango.</p>
           <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -184,19 +193,33 @@ export default async function ReportesPage({
 
         <div className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5 mb-6" style={{ animationDelay: '80ms' }}>
           <h2 className="font-semibold text-foreground mb-4">Alertas — {rango.etiqueta}</h2>
+          {/* Antes eran 3 <div> estáticos que solo mostraban el número —
+              feedback de Johanna (13/09): "quiero hover real ahí, no
+              tarjetas quietas". Ahora son links reales a su propio filtro
+              en /alertas (?estado=...), con hover que sube/ilumina cada
+              bloque en su propio color. */}
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="rounded-lg p-3 text-center bg-brand-coral/10 border border-brand-coral/20">
+            <Link
+              href="/alertas?estado=pendiente"
+              className="group rounded-lg p-3 text-center bg-brand-coral/10 border border-brand-coral/20 transition hover:-translate-y-0.5 hover:border-brand-coral/50 hover:bg-brand-coral/15 hover:shadow-[0_8px_20px_-8px_rgba(239,68,68,0.5)]"
+            >
               <p className="text-2xl font-bold text-brand-coral">⚠ {alertasPorEstado.pendiente}</p>
-              <p className="text-xs text-brand-coral/80">Pendientes</p>
-            </div>
-            <div className="rounded-lg p-3 text-center bg-brand-amber/10 border border-brand-amber/20">
+              <p className="text-xs text-brand-coral/80 group-hover:text-brand-coral">Pendientes</p>
+            </Link>
+            <Link
+              href="/alertas?estado=enviada"
+              className="group rounded-lg p-3 text-center bg-brand-amber/10 border border-brand-amber/20 transition hover:-translate-y-0.5 hover:border-brand-amber/50 hover:bg-brand-amber/15 hover:shadow-[0_8px_20px_-8px_rgba(245,158,11,0.5)]"
+            >
               <p className="text-2xl font-bold text-brand-amber">→ {alertasPorEstado.enviada}</p>
-              <p className="text-xs text-brand-amber/80">Enviadas</p>
-            </div>
-            <div className="rounded-lg p-3 text-center bg-brand-emerald/10 border border-brand-emerald/20">
+              <p className="text-xs text-brand-amber/80 group-hover:text-brand-amber">Enviadas</p>
+            </Link>
+            <Link
+              href="/alertas?estado=resuelta"
+              className="group rounded-lg p-3 text-center bg-brand-emerald/10 border border-brand-emerald/20 transition hover:-translate-y-0.5 hover:border-brand-emerald/50 hover:bg-brand-emerald/15 hover:shadow-[0_8px_20px_-8px_rgba(0,212,170,0.5)]"
+            >
               <p className="text-2xl font-bold text-brand-emerald">✓ {alertasPorEstado.resuelta}</p>
-              <p className="text-xs text-brand-emerald/80">Resueltas</p>
-            </div>
+              <p className="text-xs text-brand-emerald/80 group-hover:text-brand-emerald">Resueltas</p>
+            </Link>
           </div>
 
           <GraficoAlertas

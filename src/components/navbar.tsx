@@ -33,6 +33,10 @@ export default async function Navbar() {
           </div>
         </Link>
         <nav className="flex items-center gap-1 flex-wrap">
+          {/* Volver a "/" solo era posible haciendo clic sobre el logo, sin
+              ninguna etiqueta visible — feedback de Johanna (13/09):
+              "funciona casi accidental". Link explícito y rotulado. */}
+          <Link href="/" className={navLinkClase}>Panel de inicio</Link>
           <Link href="/contenedores" className={navLinkClase}>Contenedores</Link>
           {perfil?.rol === 'administrador' && (
             <Link href="/contenedores/nuevo" className={navLinkClase}>+ Registrar</Link>
