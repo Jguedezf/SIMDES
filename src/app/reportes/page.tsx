@@ -3,7 +3,7 @@ import Navbar from '@/components/navbar'
 import FondoPantalla from '@/components/fondo-pantalla'
 import { exigirRol } from '@/lib/auth'
 import { crearClienteServidor } from '@/lib/supabase-servidor'
-import { calcularRango, diasDelRango } from '@/lib/rango-fechas'
+import { calcularRango, diasDelRango, claveDia } from '@/lib/rango-fechas'
 import ExportarReportes from './exportar-reportes'
 import GraficoAlertas from './grafico-alertas'
 import GraficoHistorial, { type PuntoHistorial } from './grafico-historial'
@@ -17,7 +17,7 @@ type UsoTokens = {
   total_tokens: number | null
 }
 
-type Alerta = { estado: string; creado_en: string }
+type Alerta = { estado: string; creado_en: string; contenedores: { eliminado_en: string | null }[] }
 type Contenedor = { id: string; codigo: string }
 type UltimaLectura = { contenedor_id: string; timestamp: string }
 
@@ -54,7 +54,7 @@ export default async function ReportesPage({
         .lte('timestamp', rango.hasta.toISOString()),
       supabaseServidor
         .from('alertas')
-        .select('estado, creado_en')
+        .select('estado, creado_en, contenedores(eliminado_en)')
         .gte('creado_en', rango.desde.toISOString())
         .lte('creado_en', rango.hasta.toISOString()),
       supabaseServidor.from('contenedores').select('id, codigo').is('eliminado_en', null),
@@ -62,7 +62,10 @@ export default async function ReportesPage({
     ])
 
   const filasTokens = (usoTokens ?? []) as UsoTokens[]
-  const filasAlertas = (alertas ?? []) as Alerta[]
+  // Mismo cruce que ya se corrigió en /alertas (Hallazgo 6, 14/09): una
+  // alerta de un contenedor eliminado lógicamente no debe contar en las
+  // estadísticas del reporte ni en el export PDF/Excel.
+  const filasAlertas = ((alertas ?? []) as Alerta[]).filter((a) => !a.contenedores?.[0]?.eliminado_en)
   const filasContenedores = (contenedores ?? []) as Contenedor[]
   const filasUltimaLectura = (ultimasLecturas ?? []) as UltimaLectura[]
 
@@ -94,7 +97,7 @@ export default async function ReportesPage({
     historialPorDia.set(dia, { fecha: dia, pendiente: 0, enviada: 0, resuelta: 0 })
   )
   filasAlertas.forEach((a) => {
-    const dia = a.creado_en.slice(0, 10)
+    const dia = claveDia(new Date(a.creado_en))
     const punto = historialPorDia.get(dia)
     if (punto && a.estado in punto) (punto as unknown as Record<string, number>)[a.estado] += 1
   })
