@@ -65,3 +65,17 @@ export function diasDelRango(desde: Date, hasta: Date): string[] {
   }
   return dias
 }
+
+// Clave de día para agrupar un timestamp real (ej. `alertas.creado_en`) en el
+// mismo esquema que `diasDelRango` — hay que pasar por `medianoche()` (zona
+// horaria del proceso) en vez de recortar el string ISO crudo (`slice(0,10)`,
+// siempre UTC). Si el proceso corre en una zona con offset (ej. desarrollo
+// local en Venezuela, UTC-4) y se usaran los dos métodos a la vez, una
+// alerta creada entre las 20:00 y 23:59 hora local cae en el día UTC
+// siguiente — su clave no coincidiría con ningún día de `diasDelRango` y
+// desaparecería en silencio del historial diario (aunque sí sigue contando
+// en los totales, que no dependen de esta agrupación). Encontrado el 14/09
+// con datos reales del propio piloto.
+export function claveDia(fecha: Date): string {
+  return medianoche(fecha).toISOString().slice(0, 10)
+}
