@@ -49,3 +49,8 @@ next-env.d.ts
 # entrega aparte, como documento Word/APA. El repo público queda para el
 # código y el README.
 /docs/
+
+# exports de trabajo de workflows de n8n (13/09) — copias de diagnóstico
+# bajadas manualmente durante una sesión puntual, no código del proyecto.
+/n8n-workflow-original.json
+/n8n-workflow-corregido.json
