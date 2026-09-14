@@ -13,7 +13,7 @@ type Alerta = {
   creado_en: string
   contenedor_id: string
   cuadrilla_id: string | null
-  contenedores: { codigo: string } | null
+  contenedores: { codigo: string; eliminado_en: string | null } | null
   cuadrillas: { nombre: string } | null
 }
 
@@ -38,12 +38,18 @@ export default async function AlertasPage({ searchParams }: { searchParams: Prom
 
   let consulta = supabase
     .from('alertas')
-    .select('id, mensaje, canal, estado, creado_en, contenedor_id, cuadrilla_id, contenedores(codigo), cuadrillas(nombre)')
+    .select('id, mensaje, canal, estado, creado_en, contenedor_id, cuadrilla_id, contenedores(codigo, eliminado_en), cuadrillas(nombre)')
     .order('creado_en', { ascending: false })
     .limit(50)
   if (estado) consulta = consulta.eq('estado', estado)
 
-  const { data: alertas } = (await consulta) as { data: Alerta[] | null }
+  const { data } = (await consulta) as { data: Alerta[] | null }
+  // El panel de alertas es público (sin login) — una alerta de un contenedor
+  // eliminado lógicamente (corrección administrativa, no retiro operativo)
+  // no debería seguir visible ahí, igual que ya se oculta del mapa/listado/
+  // dashboard. `alertas` no tiene su propia columna eliminado_en, así que se
+  // filtra en memoria contra la del contenedor relacionado.
+  const alertas = data?.filter((a) => !a.contenedores?.eliminado_en) ?? null
 
   return (
     <main className="min-h-screen relative">
