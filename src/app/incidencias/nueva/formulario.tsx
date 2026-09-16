@@ -149,6 +149,12 @@ export default function FormularioNuevaIncidencia() {
 
           {mensaje && <p className="text-sm text-brand-coral">{mensaje}</p>}
 
+          {!puedeGuardar && !guardando && (
+            <p className="text-xs text-brand-muted">
+              {!titulo.trim() ? 'Falta el título.' : 'Falta la descripción.'}
+            </p>
+          )}
+
           <button
             type="submit"
             disabled={!puedeGuardar || guardando}
