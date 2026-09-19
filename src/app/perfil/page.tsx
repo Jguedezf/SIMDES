@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { obtenerPerfil } from '@/lib/auth'
-import { supabase } from '@/lib/supabase'
+import { crearClienteServidor } from '@/lib/supabase-servidor'
 import Navbar from '@/components/navbar'
 import FondoPantalla from '@/components/fondo-pantalla'
 import PerfilCliente from './perfil-cliente'
@@ -14,6 +14,7 @@ export default async function PerfilPage() {
   // modelo — se resuelve aquí para mostrarla en /perfil, no solo guardarla).
   let cuadrilla: { nombre: string; zona_asignada: string | null; empresa: string | null } | null = null
   if (perfil.rol === 'cuadrilla' && perfil.cuadrilla_id) {
+    const supabase = await crearClienteServidor()
     const { data } = await supabase
       .from('cuadrillas')
       .select('nombre, zona_asignada, empresa')
