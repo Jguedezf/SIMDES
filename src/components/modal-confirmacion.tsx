@@ -1,5 +1,7 @@
 'use client'
 
+import { createPortal } from 'react-dom'
+
 type Props = {
   abierto: boolean
   titulo: string
@@ -20,9 +22,11 @@ type Props = {
 export default function ModalConfirmacion({
   abierto, titulo, descripcion, textoConfirmar = 'Confirmar', peligroso, cargando, onConfirmar, onCancelar,
 }: Props) {
-  if (!abierto) return null
+  if (!abierto || typeof document === 'undefined') return null
 
-  return (
+  // Se monta en <body> para escapar del contexto de apilamiento del contenedor
+  // (p. ej. el mapa de Leaflet, cuyos paneles tienen z-index 400+ y taparían el modal).
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={cargando ? undefined : (onCancelar ?? onConfirmar)} />
       <div className="modal-entrada relative w-full max-w-sm tarjeta-vidrio p-6 shadow-2xl">
@@ -53,6 +57,7 @@ export default function ModalConfirmacion({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
