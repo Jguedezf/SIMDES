@@ -305,7 +305,13 @@ export default function DetalleContenedorCliente({
               <span className={`text-xs font-bold px-2 py-1 rounded-full capitalize ${riesgoClase[prediccion.nivel_riesgo] ?? 'bg-brand-border text-brand-muted'}`}>
                 {prediccion.nivel_riesgo}
               </span>
-              {prediccion.horas_estimadas_saturacion !== null && (
+              {prediccion.horas_estimadas_saturacion === null ? (
+                <span className="text-sm text-brand-muted">
+                  Sin historial suficiente para estimar las horas hasta la saturación
+                </span>
+              ) : Number(prediccion.horas_estimadas_saturacion) === 0 ? (
+                <span className="text-sm text-brand-muted">Contenedor lleno: saturación inmediata</span>
+              ) : (
                 <span className="text-sm text-brand-muted">
                   Saturación estimada en ~{prediccion.horas_estimadas_saturacion} h
                 </span>
