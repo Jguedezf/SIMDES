@@ -58,7 +58,7 @@ function nivelAleatorio(perfil) {
 
 async function obtenerContenedores() {
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/contenedores?select=id,codigo,latitud,longitud&estado=eq.activo&order=codigo`,
+    `${SUPABASE_URL}/rest/v1/contenedores?select=id,codigo,latitud,longitud&estado=eq.activo&eliminado_en=is.null&order=codigo`,
     {
       headers: {
         apikey: SUPABASE_ANON_KEY,
