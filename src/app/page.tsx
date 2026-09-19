@@ -25,7 +25,8 @@ type Lectura = {
   timestamp: string
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ acceso?: string }> }) {
+  const sp = await searchParams
   // Perfil + las 2 consultas de datos son independientes entre sí — se piden
   // en paralelo en vez de esperar cada una por turno (waterfall).
   const [perfil, { data: contenedores }, { data: lecturas }] = await Promise.all([
@@ -87,6 +88,11 @@ export default async function DashboardPage() {
       {!perfil && <HeroLanding puntosMonitoreados={puntosUnicos} nivelPromedio={promedio} />}
 
       <div className="max-w-6xl mx-auto px-6 py-8">
+        {sp.acceso === 'denegado' && (
+          <p role="alert" className="mb-4 rounded-xl border border-brand-amber/40 bg-brand-amber/10 px-4 py-3 text-sm text-brand-amber">
+            Tu rol no tiene acceso a esa pantalla.
+          </p>
+        )}
         {/* Antes eran 3 <div> estáticos, desconectados de todo — feedback de
             Johanna (13/09): quiere que cada una "se separe" a su propia
             vista, no un número fijo. Cada una lleva a un destino coherente
@@ -106,10 +112,17 @@ export default async function DashboardPage() {
             <p className="text-sm text-brand-muted mb-1">En nivel crítico (≥85%)</p>
             <p className={`text-3xl font-bold ${criticos > 0 ? 'text-brand-coral' : 'text-foreground'}`}>{criticos}</p>
           </Link>
-          <Link href="/reportes" className="p-5 pt-4 sm:pt-5 transition hover:bg-white/5">
-            <p className="text-sm text-brand-muted mb-1">Nivel promedio de llenado</p>
-            <p className="text-3xl font-bold text-foreground">{promedio !== null ? `${promedio}%` : '—'}</p>
-          </Link>
+          {perfil?.rol === 'administrador' || perfil?.rol === 'directiva' ? (
+            <Link href="/reportes" className="p-5 pt-4 sm:pt-5 transition hover:bg-white/5">
+              <p className="text-sm text-brand-muted mb-1">Nivel promedio de llenado</p>
+              <p className="text-3xl font-bold text-foreground">{promedio !== null ? `${promedio}%` : '—'}</p>
+            </Link>
+          ) : (
+            <div className="p-5 pt-4 sm:pt-5">
+              <p className="text-sm text-brand-muted mb-1">Nivel promedio de llenado</p>
+              <p className="text-3xl font-bold text-foreground">{promedio !== null ? `${promedio}%` : '—'}</p>
+            </div>
+          )}
         </div>
 
         <div id="mapa" className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5 mb-6 scroll-mt-20" style={{ animationDelay: '60ms' }}>

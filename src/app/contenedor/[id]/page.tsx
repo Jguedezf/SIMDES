@@ -32,7 +32,8 @@ export default async function DetalleContenedorPage({ params }: { params: Promis
       .single(),
   ])
 
-  if (!contenedor) notFound()
+  // Un contenedor eliminado lógicamente solo lo ve el Administrador (para poder restaurarlo).
+  if (!contenedor || (contenedor.eliminado_en && perfil?.rol !== 'administrador')) notFound()
 
   return (
     <div className="relative">

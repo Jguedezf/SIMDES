@@ -29,12 +29,13 @@ export async function obtenerPerfil(): Promise<Perfil | null> {
   return { ...perfil, email: user.email ?? null }
 }
 
-// Exige sesión + uno de los roles indicados; si no, redirige a /login.
+// Exige sesión + uno de los roles indicados; sin sesión redirige a /login, y con sesión pero sin permiso al dashboard.
 // Usar al inicio de un Server Component de página protegida.
 export async function exigirRol(...rolesPermitidos: Rol[]): Promise<Perfil> {
   const perfil = await obtenerPerfil()
-  if (!perfil || !rolesPermitidos.includes(perfil.rol)) {
-    redirect('/login')
-  }
+  if (!perfil) redirect('/login')
+  // Con sesión pero sin el rol requerido: volver al dashboard con un aviso,
+  // no a /login (que parecería que la sesión se perdió).
+  if (!rolesPermitidos.includes(perfil.rol)) redirect('/?acceso=denegado')
   return perfil
 }
