@@ -4,6 +4,7 @@ import { exigirRol } from '@/lib/auth'
 import Navbar from '@/components/navbar'
 import FondoPantalla from '@/components/fondo-pantalla'
 import BotonResolverAlerta from './boton-resolver'
+import BotonReabrirAlerta from './boton-reabrir'
 
 type Alerta = {
   id: string
@@ -88,6 +89,9 @@ export default async function AlertasPage({ searchParams }: { searchParams: Prom
                   (perfil?.rol === 'cuadrilla' && perfil.cuadrilla_id === a.cuadrilla_id)) && (
                   <BotonResolverAlerta alertaId={a.id} />
                 )}
+              {a.estado === 'resuelta' && (perfil?.rol === 'administrador' || perfil?.rol === 'directiva') && (
+                <BotonReabrirAlerta alertaId={a.id} />
+              )}
             </div>
           ))}
         </div>

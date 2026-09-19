@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import MapaContenedoresWrapper from './mapa-contenedores-wrapper'
 import ModalConfirmacion from './modal-confirmacion'
 import Toast, { type ToastTipo } from './toast'
@@ -22,8 +22,28 @@ export default function MapaPanel({ contenedores, editable }: Props) {
   const [guardando, setGuardando] = useState(false)
   const [toast, setToast] = useState<{ mensaje: string; tipo: ToastTipo } | null>(null)
   const [confirmacion, setConfirmacion] = useState<{ mensaje: string } | null>(null)
+  const [pendiente, setPendiente] = useState<{ cantidad: number } | null>(null)
+  const resolverPendiente = useRef<((ok: boolean) => void) | null>(null)
+
+  // El marcador ya se movió visualmente al soltarlo; nada se guarda hasta que
+  // el administrador confirme. Si cancela, devolver `false` hace que el mapa
+  // regrese el marcador a su posición original.
+  function pedirConfirmacion(cantidad: number): Promise<boolean> {
+    return new Promise((resolver) => {
+      resolverPendiente.current = resolver
+      setPendiente({ cantidad })
+    })
+  }
+
+  function responder(ok: boolean) {
+    resolverPendiente.current?.(ok)
+    resolverPendiente.current = null
+    setPendiente(null)
+  }
 
   async function manejarReubicar(idsContenedores: string[], lat: number, lng: number): Promise<boolean> {
+    const confirmado = await pedirConfirmacion(idsContenedores.length)
+    if (!confirmado) return false
     setGuardando(true)
     const supabase = crearClienteNavegador()
     const { error } = await supabase
@@ -61,6 +81,16 @@ export default function MapaPanel({ contenedores, editable }: Props) {
       )}
       <MapaContenedoresWrapper contenedores={contenedores} editable={editable} onReubicar={manejarReubicar} />
       {guardando && <p className="text-xs text-brand-emerald mt-2">Guardando nueva ubicación…</p>}
+
+      <ModalConfirmacion
+        abierto={pendiente !== null}
+        titulo="¿Reubicar esta isla ecológica?"
+        descripcion={`Se moverán los ${pendiente?.cantidad ?? 0} contenedores de esta isla a la nueva posición y el cambio se verá de inmediato en el mapa público. La posición anterior no se guarda; para deshacerlo tendrías que arrastrarla de nuevo.`}
+        textoConfirmar="Sí, reubicar"
+        peligroso
+        onConfirmar={() => responder(true)}
+        onCancelar={() => responder(false)}
+      />
 
       <ModalConfirmacion
         abierto={confirmacion !== null}
