@@ -33,10 +33,21 @@ export type DatosReporte = {
 // pero el tipo de jsPDF no lo declara — se tipa acá en vez de usar `any`.
 type DocConAutoTable = jsPDF & { lastAutoTable: { finalY: number } }
 
+// Nombre ordenable por fecha y hora local (no UTC, que en Venezuela adelanta
+// el día después de las 8 p. m.), con el período sin tildes:
+// simdes-reporte_2026-09-19_1530_ultimos-7-dias.pdf
 function nombreArchivo(extension: string, periodo: string) {
-  const fecha = new Date().toISOString().slice(0, 10)
-  const periodoSeguro = periodo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-  return `simdes-reporte-${periodoSeguro}-${fecha}.${extension}`
+  const ahora = new Date()
+  const dos = (n: number) => String(n).padStart(2, '0')
+  const fecha = `${ahora.getFullYear()}-${dos(ahora.getMonth() + 1)}-${dos(ahora.getDate())}`
+  const hora = `${dos(ahora.getHours())}${dos(ahora.getMinutes())}`
+  const periodoSeguro = periodo
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+  return `simdes-reporte_${fecha}_${hora}_${periodoSeguro}.${extension}`
 }
 
 // Convierte el logo público a data URL para poder embeberlo en el PDF —
