@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
-import { obtenerPerfil } from '@/lib/auth'
+import { crearClienteServidor } from '@/lib/supabase-servidor'
+import { exigirRol } from '@/lib/auth'
 import Navbar from '@/components/navbar'
 import FondoPantalla from '@/components/fondo-pantalla'
 import BotonResolverAlerta from './boton-resolver'
@@ -29,7 +29,8 @@ const estadoEtiqueta: Record<string, string> = { pendiente: 'Pendientes', enviad
 type BusquedaParams = { estado?: string }
 
 export default async function AlertasPage({ searchParams }: { searchParams: Promise<BusquedaParams> }) {
-  const [perfil, sp] = await Promise.all([obtenerPerfil(), searchParams])
+  const [perfil, sp] = await Promise.all([exigirRol('administrador', 'directiva', 'cuadrilla'), searchParams])
+  const supabase = await crearClienteServidor()
 
   // El filtro viene de la URL — se valida contra la lista real antes de
   // usarlo, mismo patrón ya usado en /contenedores (no es dato de confianza
@@ -44,7 +45,7 @@ export default async function AlertasPage({ searchParams }: { searchParams: Prom
   if (estado) consulta = consulta.eq('estado', estado)
 
   const { data } = (await consulta) as { data: Alerta[] | null }
-  // El panel de alertas es público (sin login) — una alerta de un contenedor
+  // El panel de alertas requiere sesión (RLS solo para `authenticated`) — una alerta de un contenedor
   // eliminado lógicamente (corrección administrativa, no retiro operativo)
   // no debería seguir visible ahí, igual que ya se oculta del mapa/listado/
   // dashboard. `alertas` no tiene su propia columna eliminado_en, así que se
