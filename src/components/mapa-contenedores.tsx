@@ -162,7 +162,13 @@ export default function MapaContenedores({ contenedores, editable, onReubicar }:
           ]
         : CENTRO_DEFECTO
 
-      const mapa = L.map(divRef.current).setView(centro, 15)
+      // Zoom más gradual: la rueda avanza medio nivel por paso y los botones +/- también,
+      // en lugar de saltar un nivel entero de golpe.
+      const mapa = L.map(divRef.current, {
+        zoomSnap: 0.5,
+        zoomDelta: 0.5,
+        wheelPxPerZoomLevel: 120,
+      }).setView(centro, 15)
       mapaRef.current = mapa
 
       // Tile estándar de OSM + filtro CSS (.mapa-oscuro en globals.css) para el look oscuro.
@@ -171,6 +177,9 @@ export default function MapaContenedores({ contenedores, editable, onReubicar }:
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
+        // Mantiene tiles cercanos ya cargados y no pide nuevos a mitad del zoom animado.
+        keepBuffer: 4,
+        updateWhenZooming: false,
       }).addTo(mapa)
 
       agruparPorPunto(contenedores).forEach((punto) => {

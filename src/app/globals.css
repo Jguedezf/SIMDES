@@ -88,6 +88,13 @@ body {
   color: var(--color-brand-muted) !important;
 }
 
+.mapa-oscuro,
+.mapa-oscuro.leaflet-container {
+  /* Fondo oscuro del mapa: el gris claro por defecto de Leaflet se veía como un
+     destello blanco al montar el mapa y mientras cargan los tiles al hacer zoom. */
+  background: #0e1116;
+}
+
 .mapa-oscuro .leaflet-tile-pane {
   filter: invert(1) hue-rotate(200deg) brightness(0.85) contrast(0.9) saturate(0.6);
 }
