@@ -52,9 +52,9 @@ export default function SensorPage() {
         </div>
 
         <div className="tarjeta-vidrio tarjeta-interactiva tarjeta-entrada p-5" style={{ animationDelay: '80ms' }}>
-          <h2 className="font-semibold text-foreground mb-3">Clasificación por color (COVENIN 3838)</h2>
+          <h2 className="font-semibold text-foreground mb-3">Clasificación por color</h2>
           <p className="text-sm text-brand-muted mb-3">
-            El código de cada contenedor codifica su tipo de residuo por el color oficial de la norma:
+            La última letra del código de cada contenedor indica su tipo de residuo, identificado por color:
           </p>
           <div className="grid grid-cols-2 gap-2 text-sm text-foreground">
             <p><span className="font-semibold text-brand-amber">Y</span> — Amarillo → Plástico</p>
