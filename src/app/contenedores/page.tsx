@@ -167,7 +167,7 @@ export default async function ListadoContenedoresPage({
           <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-left text-brand-muted border-b border-brand-border">
-                <th className="py-3 px-4 font-semibold">Código</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap">Código</th>
                 <th className="py-3 px-4 font-semibold">Tipo</th>
                 <th className="py-3 px-4 font-semibold">Ubicación</th>
                 <th className="py-3 px-4 font-semibold">Zona</th>
@@ -181,7 +181,7 @@ export default async function ListadoContenedoresPage({
                 const nivel = nivelPorContenedor.get(c.id) ?? null
                 return (
                   <tr key={c.id} className="border-b border-brand-border last:border-0 hover:bg-white/5">
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 whitespace-nowrap">
                       <Link href={`/contenedor/${c.id}`} className="font-semibold text-foreground hover:text-brand-emerald font-mono">
                         {c.codigo}
                       </Link>
