@@ -16,7 +16,7 @@
 const fs = require('fs')
 const path = require('path')
 
-const WEBHOOK_URL = 'https://simdes.app.n8n.cloud/webhook/lectura-contenedor'
+const WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || 'https://simdes-demo.app.n8n.cloud/webhook/lectura-contenedor'
 
 function cargarEnvLocal() {
   const envPath = path.join(__dirname, '..', '.env.local')

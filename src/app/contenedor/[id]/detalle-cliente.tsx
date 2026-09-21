@@ -1,5 +1,6 @@
 'use client'
 
+import { N8N_WEBHOOK_LECTURA } from '@/lib/n8n'
 import { useState } from 'react'
 import Link from 'next/link'
 import { crearClienteNavegador } from '@/lib/supabase-navegador'
@@ -97,7 +98,7 @@ export default function DetalleContenedorCliente({
 
     try {
       const res = await fetch(
-        'https://simdes.app.n8n.cloud/webhook/lectura-contenedor',
+        N8N_WEBHOOK_LECTURA,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
