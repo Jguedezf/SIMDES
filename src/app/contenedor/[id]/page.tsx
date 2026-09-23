@@ -14,7 +14,7 @@ export default async function DetalleContenedorPage({ params }: { params: Promis
   const [{ data: contenedor }, { data: lecturas }, { data: prediccion }] = await Promise.all([
     supabase
       .from('contenedores')
-      .select('id, codigo, tipo_residuo, capacidad_litros, estado, zona_tipo, eliminado_en, numero_punto, nombre_ubicacion')
+      .select('id, codigo, tipo_residuo, capacidad_litros, estado, zona_tipo, eliminado_en, numero_punto, nombre_ubicacion, latitud, longitud')
       .eq('id', id)
       .single(),
     supabase

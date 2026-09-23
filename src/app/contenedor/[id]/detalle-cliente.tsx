@@ -22,6 +22,8 @@ export type Contenedor = {
   eliminado_en: string | null
   numero_punto: number
   nombre_ubicacion: string | null
+  latitud: number | null
+  longitud: number | null
 }
 
 export type Lectura = { nivel_pct: number; timestamp: string }
@@ -106,8 +108,8 @@ export default function DetalleContenedorCliente({
             contenedor_id: contenedor.id,
             nivel_pct: nuevoNivel,
             ubicacion: '',
-            latitud: null,
-            longitud: null,
+            latitud: contenedor.latitud,
+            longitud: contenedor.longitud,
             leido_en: new Date().toISOString(),
           }),
         }
